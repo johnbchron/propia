@@ -27,9 +27,6 @@ pub enum Token {
   Data {
     span: Span,
   },
-  Truncated {
-    at: u32,
-  },
 }
 
 /// Only in the range `0x00..=0x0F`
