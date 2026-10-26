@@ -25,7 +25,7 @@ pub enum Token<'a> {
     span: Span,
     tag: ValueTag,
     tag_span: Span,
-    name: &'a [u8],
+    name: &'a str,
     name_span: Span,
     value: &'a [u8],
     value_span: Span,

@@ -67,8 +67,9 @@ impl<'a> Iterator for TokenIterator<'a> {
 
             let (name_len, _) = self.cursor.read_u16()?;
             let (name, name_span) = self.cursor.take(name_len as usize)?;
-            let (value_len, _) = self.cursor.read_u16()?;
+            let name = str::from_utf8(name).expect("value name is not utf8");
 
+            let (value_len, _) = self.cursor.read_u16()?;
             // value type is first 4 bytes of value
             let (kind, kind_span) = self.cursor.read_u32()?;
             let value_len = value_len.checked_sub(4)?;
@@ -93,6 +94,7 @@ impl<'a> Iterator for TokenIterator<'a> {
 
             let (name_len, _) = self.cursor.read_u16()?;
             let (name, name_span) = self.cursor.take(name_len as usize)?;
+            let name = str::from_utf8(name).expect("value name is not utf8");
 
             let (value_len, _) = self.cursor.read_u16()?;
             let (value, value_span) = self.cursor.take(value_len as usize)?;
