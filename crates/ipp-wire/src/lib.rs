@@ -10,22 +10,29 @@ pub struct Span {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Token {
+pub enum Token<'a> {
   Header {
     span: Span,
+    version: (u8, u8),
+    operation_or_status: u16,
+    request_id: u32,
   },
   Delimiter {
+    span: Span,
     tag: DelimiterTag,
-    tag_span: Span,
   },
   Value {
+    span: Span,
     tag: ValueTag,
     tag_span: Span,
-    name: Span,
-    value: Span,
+    name: &'a [u8],
+    name_span: Span,
+    value: &'a [u8],
+    value_span: Span,
   },
   Data {
     span: Span,
+    data: &'a [u8],
   },
 }
 
