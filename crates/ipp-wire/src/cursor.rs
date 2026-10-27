@@ -8,7 +8,7 @@ pub(crate) struct Cursor<'a> {
   end: usize,
 }
 
-pub struct CursorMark(usize);
+pub(crate) struct CursorMark(usize);
 
 impl<'a> Cursor<'a> {
   pub fn new(buf: &'a [u8]) -> Option<Self> {
