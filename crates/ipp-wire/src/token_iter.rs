@@ -1,6 +1,8 @@
 use std::str::Utf8Error;
 
-use crate::{DelimiterTag, Token, ValueTag, cursor::Cursor, span::Spanned};
+use crate::{
+  DelimiterTag, Span, Token, ValueTag, cursor::Cursor, span::Spanned,
+};
 
 pub struct TokenIterator<'a> {
   pub(crate) cursor: Cursor<'a>,
@@ -15,7 +17,7 @@ pub(crate) enum TokenIteratorState {
 }
 
 #[derive(Clone, Debug, thiserror::Error)]
-#[error("decoding error at offset {offset}: message")]
+#[error("decoding error at offset {offset}: {message}")]
 pub struct DecodeError {
   pub offset: usize,
   pub message: &'static str,
@@ -141,7 +143,7 @@ impl<'a> TokenIterator<'a> {
     tag: Spanned<u8>,
   ) -> Result<Token<'a>, DecodeError> {
     // open the span for the attribute
-    let mark = self.cursor.mark();
+    let span_start = tag.span.start;
 
     // consume the name
     let name_len = self
@@ -205,7 +207,7 @@ impl<'a> TokenIterator<'a> {
     };
 
     // end the attribute span
-    let span = self.cursor.since_mark(mark);
+    let span = Span::new(span_start, self.cursor.pos() as u32);
 
     Ok(Token::Value {
       span,
