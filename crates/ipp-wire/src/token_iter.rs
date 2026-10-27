@@ -26,6 +26,7 @@ pub enum DecodeErrorKind {
   Truncated { needed: usize, available: usize },
   InvalidName { name_error: Utf8Error },
   NoEndOfAttributes,
+  InvalidExtensionLength { value_len: usize },
 }
 
 impl<'a> TokenIterator<'a> {
@@ -176,14 +177,16 @@ impl<'a> TokenIterator<'a> {
     let tag = match tag.value {
       0x7F => {
         // value type is first 4 bytes of value
+        value_len = value_len.checked_sub(4).ok_or_else(|| {
+          self.error(
+            "attribute value ends within extension type bytes",
+            DecodeErrorKind::InvalidExtensionLength {
+              value_len: value_len as _,
+            },
+          )
+        })?;
         let kind = self.cursor.u32().ok_or_else(|| {
           self.truncated_error("truncated before value tag extension type", 4)
-        })?;
-        value_len = value_len.checked_sub(4).ok_or_else(|| {
-          self.truncated_error(
-            "attribute value ends within extension type bytes",
-            4,
-          )
         })?;
         tag.map(|_| ValueTag::Extension { kind })
       }
