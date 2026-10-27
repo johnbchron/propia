@@ -16,8 +16,8 @@ impl<'a> TokenIterator<'a> {
 
 pub(crate) enum TokenIteratorState {
   Start,
-  AfterHeader,
-  AfterAttributes,
+  Attributes,
+  Data,
   End,
 }
 
@@ -42,10 +42,10 @@ impl<'a> Iterator for TokenIterator<'a> {
           request_id,
         };
 
-        self.state = TokenIteratorState::AfterHeader;
+        self.state = TokenIteratorState::Attributes;
         Some(header)
       }
-      TokenIteratorState::AfterHeader => {
+      TokenIteratorState::Attributes => {
         let tag = self.cursor.u8()?;
         // next byte is either a value tag or delimeter tag
         match tag.value {
@@ -54,7 +54,7 @@ impl<'a> Iterator for TokenIterator<'a> {
             let tag = tag.map(DelimiterTag);
 
             if tag.value == DelimiterTag::END {
-              self.state = TokenIteratorState::AfterAttributes
+              self.state = TokenIteratorState::Data
             }
 
             Some(Token::Delimiter { tag })
@@ -128,7 +128,7 @@ impl<'a> Iterator for TokenIterator<'a> {
           }
         }
       }
-      TokenIteratorState::AfterAttributes => {
+      TokenIteratorState::Data => {
         // rest of the bytes are data
         let (data_bytes, span) = self.cursor.rest();
         let data = Spanned {
