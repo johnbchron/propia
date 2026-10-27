@@ -1,38 +1,29 @@
 mod cursor;
+mod span;
 mod token_iter;
 
+use self::span::{Span, Spanned};
 pub use self::token_iter::TokenIterator;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Span {
-  pub start: u32,
-  pub len: u32,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Token<'a> {
   Header {
     span: Span,
-    version: (u8, u8),
-    operation_or_status: u16,
-    request_id: u32,
+    version: (Spanned<u8>, Spanned<u8>),
+    operation_or_status: Spanned<u16>,
+    request_id: Spanned<u32>,
   },
   Delimiter {
-    span: Span,
-    tag: DelimiterTag,
+    tag: Spanned<DelimiterTag>,
   },
   Value {
     span: Span,
-    tag: ValueTag,
-    tag_span: Span,
-    name: &'a str,
-    name_span: Span,
-    value: &'a [u8],
-    value_span: Span,
+    tag: Spanned<ValueTag>,
+    name: Spanned<&'a str>,
+    value: Spanned<&'a [u8]>,
   },
   Data {
-    span: Span,
-    data: &'a [u8],
+    data: Spanned<&'a [u8]>,
   },
 }
 
@@ -54,5 +45,5 @@ pub enum ValueTag {
   /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`
   Known(u8),
   /// A value type defined by an extension. It's a `0x7F` with the real type in the first 4 value bytes.
-  Extension { kind: u32, kind_span: Span },
+  Extension { kind: Spanned<u32> },
 }

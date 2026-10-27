@@ -7,12 +7,12 @@ const MESSAGE_2_BYTES: &[u8] =
 
 fn main() {
   println!("message 1:");
-  for token in TokenIterator::new(MESSAGE_1_BYTES) {
+  for token in TokenIterator::new(MESSAGE_1_BYTES).unwrap() {
     println!("  token: {token:?}");
   }
 
   println!("message 2:");
-  for token in TokenIterator::new(MESSAGE_2_BYTES) {
+  for token in TokenIterator::new(MESSAGE_2_BYTES).unwrap() {
     println!("  token: {token:?}");
   }
 }
