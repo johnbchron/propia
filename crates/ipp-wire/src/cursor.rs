@@ -77,7 +77,7 @@ impl<'a> Cursor<'a> {
     CursorMark(self.pos)
   }
 
-  pub fn since_mark(&self, mark: CursorMark) -> Option<Span> {
-    Some(Span::new(mark.0 as u32, self.pos as u32))
+  pub fn since_mark(&self, mark: CursorMark) -> Span {
+    Span::new(mark.0 as u32, self.pos as u32)
   }
 }

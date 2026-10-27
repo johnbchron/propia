@@ -33,7 +33,7 @@ impl<'a> Iterator for TokenIterator<'a> {
         let minor_version = self.cursor.u8()?;
         let operation_or_status = self.cursor.u16()?;
         let request_id = self.cursor.u32()?;
-        let span = self.cursor.since_mark(mark)?;
+        let span = self.cursor.since_mark(mark);
 
         let header = Token::Header {
           span,
@@ -83,7 +83,7 @@ impl<'a> Iterator for TokenIterator<'a> {
               span: value_span,
             };
 
-            let span = self.cursor.since_mark(mark)?;
+            let span = self.cursor.since_mark(mark);
 
             let tag = tag.map(|_| ValueTag::Extension { kind });
 
@@ -115,7 +115,7 @@ impl<'a> Iterator for TokenIterator<'a> {
               span: value_span,
             };
 
-            let span = self.cursor.since_mark(mark)?;
+            let span = self.cursor.since_mark(mark);
 
             let tag = tag.map(ValueTag::Known);
 
