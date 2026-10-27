@@ -5,7 +5,6 @@ use super::Span;
 pub(crate) struct Cursor<'a> {
   buf: &'a [u8],
   pos: usize,
-  end: usize,
 }
 
 pub(crate) struct CursorMark(usize);
@@ -15,11 +14,7 @@ impl<'a> Cursor<'a> {
     if buf.len() > u32::MAX as usize {
       return None;
     }
-    Some(Cursor {
-      buf,
-      pos: 0,
-      end: buf.len(),
-    })
+    Some(Cursor { buf, pos: 0 })
   }
 
   pub fn pos(&self) -> usize {
@@ -27,7 +22,7 @@ impl<'a> Cursor<'a> {
   }
 
   pub fn remaining(&self) -> usize {
-    self.end - self.pos
+    self.buf.len() - self.pos
   }
 
   pub fn take(&mut self, n: usize) -> Option<(&'a [u8], Span)> {
