@@ -17,7 +17,7 @@ pub(crate) enum TokenIteratorState {
 #[derive(Clone, Debug)]
 pub struct DecodeError {
   pub offset: usize,
-  pub message: String,
+  pub message: &'static str,
   pub kind: DecodeErrorKind,
 }
 
@@ -38,20 +38,20 @@ impl<'a> TokenIterator<'a> {
 
   fn error(
     &mut self,
-    message: impl AsRef<str>,
+    message: &'static str,
     kind: DecodeErrorKind,
   ) -> DecodeError {
     self.state = TokenIteratorState::End;
     DecodeError {
       offset: self.cursor.pos(),
-      message: message.as_ref().to_string(),
+      message,
       kind,
     }
   }
 
   fn truncated_error(
     &mut self,
-    message: impl AsRef<str>,
+    message: &'static str,
     needed: usize,
   ) -> DecodeError {
     self.error(
