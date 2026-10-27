@@ -5,8 +5,8 @@ use crate::{
 };
 
 pub struct TokenIterator<'a> {
-  pub(crate) cursor: Cursor<'a>,
-  pub(crate) state: TokenIteratorState,
+  cursor: Cursor<'a>,
+  state: TokenIteratorState,
 }
 
 pub(crate) enum TokenIteratorState {
