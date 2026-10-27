@@ -1,9 +1,9 @@
 use ipp_wire::TokenIterator;
 
 const MESSAGE_1_BYTES: &[u8] =
-  include_bytes!("../../../corpora/initial/goodMessage1.ipp");
+  include_bytes!("../../../corpora/ipp-messages-initial/good/1.ipp");
 const MESSAGE_2_BYTES: &[u8] =
-  include_bytes!("../../../corpora/initial/goodMessage2.ipp");
+  include_bytes!("../../../corpora/ipp-messages-initial/good/2.ipp");
 
 fn main() {
   println!("message 1:");
