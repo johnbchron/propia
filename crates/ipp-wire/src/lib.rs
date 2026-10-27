@@ -27,6 +27,17 @@ pub enum Token<'a> {
   },
 }
 
+impl Token<'_> {
+  pub fn span(&self) -> Span {
+    match self {
+      Token::Header { span, .. } => *span,
+      Token::Delimiter { tag } => tag.span,
+      Token::Value { span, .. } => *span,
+      Token::Data { data } => data.span,
+    }
+  }
+}
+
 /// Only in the range `0x00..=0x0F`
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DelimiterTag(pub u8);
