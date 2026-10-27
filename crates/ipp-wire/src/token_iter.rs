@@ -179,8 +179,12 @@ impl<'a> TokenIterator<'a> {
         let kind = self.cursor.u32().ok_or_else(|| {
           self.truncated_error("truncated before value tag extension type", 4)
         })?;
-        // length checked above
-        value_len = value_len.checked_sub(4).unwrap();
+        value_len = value_len.checked_sub(4).ok_or_else(|| {
+          self.truncated_error(
+            "attribute value ends within extension type bytes",
+            4,
+          )
+        })?;
         tag.map(|_| ValueTag::Extension { kind })
       }
       _ => tag.map(ValueTag::Known),
