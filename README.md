@@ -1,5 +1,7 @@
 # Propia
 
+## Vision
+
 The intent of this project is to create both a robust and reliable IPP print
 server and a suite of tools and libraries that make life with IPP easier.
 
@@ -18,3 +20,9 @@ users and costs, operate virtual queues, load-balance between machines, and
 in general provide an overwhelmingly positive experience to administrators and
 sysadmins which are currently using products like PaperCut. I believe it can be
 done, and I also believe Rust is the best language to do it in.
+
+## Approach
+
+The first big piece I want to build is an IPP proxy and explorer, which will
+allow one to set a proxy destination and pass messages through while showing an
+IPP explorer web interface.
