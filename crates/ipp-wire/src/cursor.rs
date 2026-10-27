@@ -30,10 +30,6 @@ impl<'a> Cursor<'a> {
     self.end - self.pos
   }
 
-  pub fn is_empty(&self) -> bool {
-    self.pos == self.end
-  }
-
   pub fn take(&mut self, n: usize) -> Option<(&'a [u8], Span)> {
     if n > self.remaining() {
       return None;
