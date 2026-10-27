@@ -14,7 +14,8 @@ pub(crate) enum TokenIteratorState {
   End,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, thiserror::Error)]
+#[error("decoding error at offset {offset}: message")]
 pub struct DecodeError {
   pub offset: usize,
   pub message: &'static str,
