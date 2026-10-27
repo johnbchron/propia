@@ -2,8 +2,8 @@ mod cursor;
 mod span;
 mod token_iter;
 
-use self::span::{Span, Spanned};
-pub use self::token_iter::TokenIterator;
+pub use self::span::{Span, Spanned};
+pub use self::token_iter::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Token<'a> {
