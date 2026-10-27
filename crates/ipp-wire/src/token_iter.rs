@@ -1,3 +1,5 @@
+use std::str::Utf8Error;
+
 use crate::{DelimiterTag, Token, ValueTag, cursor::Cursor, span::Spanned};
 
 pub struct TokenIterator<'a> {
@@ -12,6 +14,20 @@ pub(crate) enum TokenIteratorState {
   End,
 }
 
+#[derive(Clone, Debug)]
+pub struct DecodeError {
+  pub offset: usize,
+  pub message: String,
+  pub kind: DecodeErrorKind,
+}
+
+#[derive(Clone, Debug)]
+pub enum DecodeErrorKind {
+  Truncated { needed: usize, available: usize },
+  InvalidName { name_error: Utf8Error },
+  NoEndOfAttributes,
+}
+
 impl<'a> TokenIterator<'a> {
   pub fn new(input: &'a [u8]) -> Option<Self> {
     Some(Self {
@@ -20,19 +36,57 @@ impl<'a> TokenIterator<'a> {
     })
   }
 
-  fn decode_header(&mut self) -> Option<Token<'a>> {
+  fn error(
+    &mut self,
+    message: impl AsRef<str>,
+    kind: DecodeErrorKind,
+  ) -> DecodeError {
+    self.state = TokenIteratorState::End;
+    DecodeError {
+      offset: self.cursor.pos(),
+      message: message.as_ref().to_string(),
+      kind,
+    }
+  }
+
+  fn truncated_error(
+    &mut self,
+    message: impl AsRef<str>,
+    needed: usize,
+  ) -> DecodeError {
+    self.error(
+      message,
+      DecodeErrorKind::Truncated {
+        needed,
+        available: self.cursor.remaining(),
+      },
+    )
+  }
+
+  fn decode_header(&mut self) -> Result<Token<'a>, DecodeError> {
     // open the span for the header
     let mark = self.cursor.mark();
 
     // read the version
-    let major_version = self.cursor.u8()?;
-    let minor_version = self.cursor.u8()?;
+    let major_version = self.cursor.u8().ok_or_else(|| {
+      self.truncated_error("truncated before header major version", 1)
+    })?;
+    let minor_version = self.cursor.u8().ok_or_else(|| {
+      self.truncated_error("truncated before header minor version", 1)
+    })?;
 
     // an operation ID for a request and a status code for a response
-    let operation_or_status = self.cursor.u16()?;
+    let operation_or_status = self.cursor.u16().ok_or_else(|| {
+      self.truncated_error(
+        "truncated before header operation-id or status-code",
+        2,
+      )
+    })?;
 
     // correlating ID
-    let request_id = self.cursor.u32()?;
+    let request_id = self.cursor.u32().ok_or_else(|| {
+      self.truncated_error("truncated before header request-id", 4)
+    })?;
 
     // end the header span
     let span = self.cursor.since_mark(mark);
@@ -45,22 +99,32 @@ impl<'a> TokenIterator<'a> {
     };
 
     self.state = TokenIteratorState::Attributes;
-    Some(header)
+    Ok(header)
   }
 
-  fn decode_delimiter_tag(&mut self, tag: Spanned<u8>) -> Option<Token<'a>> {
+  fn decode_delimiter_tag(
+    &mut self,
+    tag: Spanned<u8>,
+  ) -> Result<Token<'a>, DecodeError> {
     let tag = tag.map(DelimiterTag);
 
     if tag.value == DelimiterTag::END {
       self.state = TokenIteratorState::Data
     }
 
-    Some(Token::Delimiter { tag })
+    Ok(Token::Delimiter { tag })
   }
 
-  fn decode_attribute_or_delimiter(&mut self) -> Option<Token<'a>> {
+  fn decode_attribute_or_delimiter(
+    &mut self,
+  ) -> Result<Token<'a>, DecodeError> {
     // pull the first byte to see what it is
-    let tag = self.cursor.u8()?;
+    let tag = self.cursor.u8().ok_or_else(|| {
+      self.error(
+        "message ended before end-of-attributes tag",
+        DecodeErrorKind::NoEndOfAttributes,
+      )
+    })?;
 
     match tag.value {
       // delimiter tag
@@ -70,34 +134,63 @@ impl<'a> TokenIterator<'a> {
     }
   }
 
-  fn decode_attribute(&mut self, tag: Spanned<u8>) -> Option<Token<'a>> {
+  fn decode_attribute(
+    &mut self,
+    tag: Spanned<u8>,
+  ) -> Result<Token<'a>, DecodeError> {
     // open the span for the attribute
     let mark = self.cursor.mark();
 
     // consume the name
-    let name_len = self.cursor.u16()?.value;
-    let (name_bytes, name_span) = self.cursor.take(name_len as usize)?;
+    let name_len = self
+      .cursor
+      .u16()
+      .ok_or_else(|| {
+        self.truncated_error("truncated before attribute name length", 2)
+      })?
+      .value;
+    let (name_bytes, name_span) =
+      self.cursor.take(name_len as usize).ok_or_else(|| {
+        self.truncated_error("truncated before attribute name", name_len as _)
+      })?;
     let name = Spanned {
-      value: str::from_utf8(name_bytes).expect("value name is not utf8"),
+      value: str::from_utf8(name_bytes).map_err(|e| {
+        self.error(
+          "attribute name is not valid utf-8",
+          DecodeErrorKind::InvalidName { name_error: e },
+        )
+      })?,
       span: name_span,
     };
 
     // get the length of the value
-    let mut value_len = self.cursor.u16()?.value;
+    let mut value_len = self
+      .cursor
+      .u16()
+      .ok_or_else(|| {
+        self.truncated_error("truncated before attribute value length", 2)
+      })?
+      .value;
 
     // if it's an extension value type, extract the value type first
     let tag = match tag.value {
       0x7F => {
         // value type is first 4 bytes of value
-        let kind = self.cursor.u32()?;
-        value_len = value_len.checked_sub(4)?;
+        let kind = self.cursor.u32().ok_or_else(|| {
+          self.truncated_error("truncated before value tag extension type", 4)
+        })?;
+        // length checked above
+        value_len = value_len.checked_sub(4).unwrap();
         tag.map(|_| ValueTag::Extension { kind })
       }
       _ => tag.map(ValueTag::Known),
     };
 
     // extract the value itself
-    let (value_bytes, value_span) = self.cursor.take(value_len as usize)?;
+    let (value_bytes, value_span) =
+      self.cursor.take(value_len as usize).ok_or_else(|| {
+        self.truncated_error("truncated before attribute value", value_len as _)
+      })?;
     let value = Spanned {
       value: value_bytes,
       span: value_span,
@@ -106,7 +199,7 @@ impl<'a> TokenIterator<'a> {
     // end the attribute span
     let span = self.cursor.since_mark(mark);
 
-    Some(Token::Value {
+    Ok(Token::Value {
       span,
       tag,
       name,
@@ -114,7 +207,7 @@ impl<'a> TokenIterator<'a> {
     })
   }
 
-  fn decode_data(&mut self) -> Option<Token<'a>> {
+  fn decode_data(&mut self) -> Token<'a> {
     // the rest of the message bytes are the message data
     let (data_bytes, span) = self.cursor.rest();
 
@@ -125,18 +218,20 @@ impl<'a> TokenIterator<'a> {
 
     self.state = TokenIteratorState::End;
 
-    Some(Token::Data { data })
+    Token::Data { data }
   }
 }
 
 impl<'a> Iterator for TokenIterator<'a> {
-  type Item = Token<'a>;
+  type Item = Result<Token<'a>, DecodeError>;
 
   fn next(&mut self) -> Option<Self::Item> {
     match self.state {
-      TokenIteratorState::Start => self.decode_header(),
-      TokenIteratorState::Attributes => self.decode_attribute_or_delimiter(),
-      TokenIteratorState::Data => self.decode_data(),
+      TokenIteratorState::Start => Some(self.decode_header()),
+      TokenIteratorState::Attributes => {
+        Some(self.decode_attribute_or_delimiter())
+      }
+      TokenIteratorState::Data => Some(Ok(self.decode_data())),
       TokenIteratorState::End => None,
     }
   }
