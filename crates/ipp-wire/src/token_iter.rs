@@ -1,4 +1,4 @@
-use std::str::Utf8Error;
+use std::{iter::FusedIterator, str::Utf8Error};
 
 use crate::{
   DelimiterTag, Span, Token, ValueTag, cursor::Cursor, span::Spanned,
@@ -246,3 +246,5 @@ impl<'a> Iterator for TokenIterator<'a> {
     }
   }
 }
+
+impl FusedIterator for TokenIterator<'_> {}
