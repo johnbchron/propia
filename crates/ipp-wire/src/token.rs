@@ -26,9 +26,8 @@ impl Token<'_> {
   #[must_use]
   pub fn span(&self) -> Span {
     match self {
-      Token::Header { span, .. } => *span,
+      Token::Header { span, .. } | Token::Value { span, .. } => *span,
       Token::Delimiter { tag } => tag.span,
-      Token::Value { span, .. } => *span,
       Token::Data { data } => data.span,
     }
   }

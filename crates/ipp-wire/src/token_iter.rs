@@ -42,7 +42,11 @@ impl<'a> Iterator for TokenIterator<'a> {
       }
       Ok(Step::Body) => {
         self.done = true;
-        let span = Span::new(self.pos, self.input.len() as u32);
+        let span = Span::new(
+          self.pos,
+          u32::try_from(self.input.len())
+            .expect("input proven to be shorter than u32::MAX"),
+        );
         Some(Ok(Token::Data {
           data: Spanned {
             value: &self.input[self.pos as usize..],

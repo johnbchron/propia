@@ -84,7 +84,7 @@ impl Decoder {
         match token {
           Token::Header { .. } => self.state = State::Attributes,
           Token::Delimiter { tag } if tag.value == DelimiterTag::END => {
-            self.state = State::Body
+            self.state = State::Body;
           }
           _ => {}
         }

@@ -77,15 +77,17 @@ pub(super) fn decode_attribute<'a>(
     .u16()
     .ok_or_else(|| need(cur, 2, "truncated before attribute name length"))?
     .value;
-  let (name_bytes, name_span) = cur.take(name_len as u32).ok_or_else(|| {
-    need(cur, name_len as _, "truncated before attribute name")
-  })?;
-  let name = match name_bytes.is_empty() {
-    true => None,
-    false => Some(Spanned {
+  let (name_bytes, name_span) =
+    cur.take(u32::from(name_len)).ok_or_else(|| {
+      need(cur, u32::from(name_len), "truncated before attribute name")
+    })?;
+  let name = if name_bytes.is_empty() {
+    None
+  } else {
+    Some(Spanned {
       value: name_bytes,
       span: name_span,
-    }),
+    })
   };
 
   // get the length of the value
@@ -103,7 +105,7 @@ pub(super) fn decode_attribute<'a>(
           cur,
           "attribute value ends within extension type bytes",
           DecodeErrorKind::InvalidExtensionLength {
-            value_len: value_len as _,
+            value_len: u32::from(value_len),
           },
         )
       })?;
@@ -117,8 +119,12 @@ pub(super) fn decode_attribute<'a>(
 
   // extract the value itself
   let (value_bytes, value_span) =
-    cur.take(value_len as u32).ok_or_else(|| {
-      need(cur, value_len as _, "truncated before attribute value")
+    cur.take(u32::from(value_len)).ok_or_else(|| {
+      need(
+        cur,
+        u32::from(value_len),
+        "truncated before attribute value",
+      )
     })?;
   let value = Spanned {
     value: value_bytes,

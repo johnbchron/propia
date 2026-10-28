@@ -11,13 +11,14 @@ pub(crate) struct Cursor<'a> {
   pos: u32,
 }
 
+#[derive(Clone, Copy)]
 pub(crate) struct CursorMark(u32);
 
 impl<'a> Cursor<'a> {
   /// Creates a new cursor. Returns `None` if `base + buf.len() > U32::MAX`.
   #[must_use]
   pub fn new(buf: &'a [u8], base: u32) -> Option<Self> {
-    if base as u64 + buf.len() as u64 > u32::MAX as u64 {
+    if u64::from(base) + buf.len() as u64 > u64::from(u32::MAX) {
       return None;
     }
     Some(Cursor { buf, base, pos: 0 })
@@ -38,7 +39,9 @@ impl<'a> Cursor<'a> {
   /// The bytes remaining in the buffer.
   #[must_use]
   pub fn remaining(&self) -> u32 {
-    self.buf.len() as u32 - self.pos
+    u32::try_from(self.buf.len())
+      .expect("input proven to be shorter than u32::MAX")
+      - self.pos
   }
 
   /// Takes bytes from the buffer, returning `None` if there aren't enough.
