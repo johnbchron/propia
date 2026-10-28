@@ -32,7 +32,7 @@ impl<B> Token<B> {
     }
   }
 
-  fn map<U, F>(self, f: F) -> Token<U>
+  pub fn map_generic<U, F>(self, f: F) -> Token<U>
   where
     F: Copy + Fn(Spanned<B>) -> Spanned<U>,
   {
@@ -73,17 +73,17 @@ pub type TokenOwned = Token<Vec<u8>>;
 
 impl<'a> TokenRef<'a> {
   pub fn detach(self) -> TokenIdx {
-    self.map(|s| s.map(|_| ()))
+    self.map_generic(|s| s.map(|_| ()))
   }
 
   pub fn owned(self) -> TokenOwned {
-    self.map(|span| span.map(|s| s.to_vec()))
+    self.map_generic(|span| span.map(|s| s.to_vec()))
   }
 }
 
 impl TokenIdx {
   pub fn attach<'a>(self, buf: &'a [u8]) -> TokenRef<'a> {
-    self.map(|s| Spanned {
+    self.map_generic(|s| Spanned {
       value: &buf[s.span.start as usize..s.span.end as usize],
       span: s.span,
     })
