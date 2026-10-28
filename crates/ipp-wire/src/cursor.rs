@@ -2,6 +2,7 @@ use crate::span::Spanned;
 
 use super::Span;
 
+/// Only accepts buffers less than 4 GiB.
 pub(crate) struct Cursor<'a> {
   buf: &'a [u8],
   /// base offset to use in spans
