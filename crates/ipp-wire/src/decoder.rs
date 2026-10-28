@@ -65,7 +65,7 @@ impl Decoder {
       self.state = State::Failed;
       DecodeError {
         offset: self.offset as usize,
-        message: "message exceeds 4 GiB of attributes",
+        message: "buffer exceeds 4 GiB",
         kind: DecodeErrorKind::OffsetOverflow,
       }
     })?;
