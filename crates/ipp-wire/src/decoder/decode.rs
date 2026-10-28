@@ -79,15 +79,12 @@ pub(super) fn decode_attribute<'a>(
     cur.take(name_len as usize).ok_or_else(|| {
       need(cur, name_len as _, "truncated before attribute name")
     })?;
-  let name = Spanned {
-    value: str::from_utf8(name_bytes).map_err(|e| {
-      invalid(
-        cur,
-        "attribute name is not valid utf-8",
-        DecodeErrorKind::InvalidName { name_error: e },
-      )
-    })?,
-    span: name_span,
+  let name = match name_bytes.is_empty() {
+    true => None,
+    false => Some(Spanned {
+      value: name_bytes,
+      span: name_span,
+    }),
   };
 
   // get the length of the value

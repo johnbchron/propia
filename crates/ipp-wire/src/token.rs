@@ -14,7 +14,7 @@ pub enum Token<'a> {
   Value {
     span: Span,
     tag: Spanned<ValueTag>,
-    name: Spanned<&'a str>,
+    name: Option<Spanned<&'a [u8]>>,
     value: Spanned<&'a [u8]>,
   },
   Data {
