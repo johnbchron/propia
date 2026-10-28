@@ -26,3 +26,10 @@ path = "fuzz_targets/streaming.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "reencode"
+path = "fuzz_targets/reencode.rs"
+test = false
+doc = false
+bench = false
