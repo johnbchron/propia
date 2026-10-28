@@ -1,9 +1,11 @@
 mod cursor;
 mod decoder;
+mod error;
 mod span;
 mod token_iter;
 
 pub use self::decoder::*;
+pub use self::error::*;
 pub use self::span::{Span, Spanned};
 pub use self::token_iter::*;
 
