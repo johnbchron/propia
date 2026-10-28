@@ -7,7 +7,7 @@ pub(crate) struct Cursor<'a> {
   /// base offset to use in spans
   base: u32,
   /// position within the current buffer
-  pos: usize,
+  pos: u32,
 }
 
 pub(crate) struct CursorMark(u32);
@@ -27,25 +27,25 @@ impl<'a> Cursor<'a> {
   }
 
   /// The current position within the buffer.
-  pub fn pos(&self) -> usize {
+  pub fn pos(&self) -> u32 {
     self.pos
   }
 
   /// The bytes remaining in the buffer.
-  pub fn remaining(&self) -> usize {
-    self.buf.len() - self.pos
+  pub fn remaining(&self) -> u32 {
+    self.buf.len() as u32 - self.pos
   }
 
   /// Takes bytes from the buffer, returning `None` if there aren't enough.
   pub fn take(&mut self, n: usize) -> Option<(&'a [u8], Span)> {
-    if n > self.remaining() {
+    if n as u32 > self.remaining() {
       return None;
     }
 
     let start = self.offset();
-    self.pos += n;
+    self.pos += n as u32;
 
-    let slice = &self.buf[self.pos - n..self.pos];
+    let slice = &self.buf[self.pos as usize - n..self.pos as usize];
     let span = Span::new(start as u32, self.offset());
 
     Some((slice, span))
