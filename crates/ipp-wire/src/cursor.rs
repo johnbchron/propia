@@ -23,7 +23,7 @@ impl<'a> Cursor<'a> {
 
   /// The current absolute offset.
   pub fn offset(&self) -> u32 {
-    self.base + self.pos as u32
+    self.base + self.pos
   }
 
   /// The current position within the buffer.
@@ -46,7 +46,7 @@ impl<'a> Cursor<'a> {
     self.pos += n as u32;
 
     let slice = &self.buf[self.pos as usize - n..self.pos as usize];
-    let span = Span::new(start as u32, self.offset());
+    let span = Span::new(start, self.offset());
 
     Some((slice, span))
   }
@@ -82,6 +82,6 @@ impl<'a> Cursor<'a> {
 
   /// Returns the span from the given mark until now.
   pub fn since_mark(&self, mark: CursorMark) -> Span {
-    Span::new(mark.0 as u32, self.pos as u32)
+    Span::new(mark.0, self.offset())
   }
 }
