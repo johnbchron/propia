@@ -55,6 +55,12 @@ impl Decoder {
     buf: &'a [u8],
     eof: bool,
   ) -> Result<Step<'a>, DecodeError> {
+    match &self.state {
+      State::Body => return Ok(Step::Body),
+      State::Failed => return Ok(Step::Done),
+      _ => (),
+    }
+
     let mut cur = Cursor::new(buf, self.offset).ok_or_else(|| {
       self.state = State::Failed;
       DecodeError {
@@ -67,8 +73,7 @@ impl Decoder {
     let attempt = match self.state {
       State::Header => decode_header(&mut cur),
       State::Attributes => decode_attribute_or_delimiter(&mut cur),
-      State::Body => return Ok(Step::Body),
-      State::Failed => return Ok(Step::Done),
+      _ => unreachable!("fused states already checked"),
     };
 
     match attempt {
