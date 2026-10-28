@@ -4,44 +4,60 @@ use super::Span;
 
 pub(crate) struct Cursor<'a> {
   buf: &'a [u8],
+  /// base offset to use in spans
+  base: u32,
+  /// position within the current buffer
   pos: usize,
 }
 
-pub(crate) struct CursorMark(usize);
+pub(crate) struct CursorMark(u32);
 
 impl<'a> Cursor<'a> {
-  pub fn new(buf: &'a [u8]) -> Option<Self> {
-    if buf.len() > u32::MAX as usize {
+  /// Creates a new cursor. Returns `None` if `base + buf.len() > U32::MAX`.
+  pub fn new(buf: &'a [u8], base: u32) -> Option<Self> {
+    if base as u64 + buf.len() as u64 > u32::MAX as u64 {
       return None;
     }
-    Some(Cursor { buf, pos: 0 })
+    Some(Cursor { buf, base, pos: 0 })
   }
 
+  /// The current absolute offset.
+  pub fn offset(&self) -> u32 {
+    self.base + self.pos as u32
+  }
+
+  /// The current position within the buffer.
   pub fn pos(&self) -> usize {
     self.pos
   }
 
+  /// The bytes remaining in the buffer.
   pub fn remaining(&self) -> usize {
     self.buf.len() - self.pos
   }
 
+  /// Takes bytes from the buffer, returning `None` if there aren't enough.
   pub fn take(&mut self, n: usize) -> Option<(&'a [u8], Span)> {
     if n > self.remaining() {
       return None;
     }
-    let start = self.pos;
+
+    let start = self.offset();
     self.pos += n;
-    Some((
-      &self.buf[start..self.pos],
-      Span::new(start as u32, self.pos as u32),
-    ))
+
+    let slice = &self.buf[self.pos - n..self.pos];
+    let span = Span::new(start as u32, self.offset());
+
+    Some((slice, span))
   }
 
+  /// Reads a `u8` from the buffer and advances the cursor.
   pub fn u8(&mut self) -> Option<Spanned<u8>> {
     let (b, span) = self.take(1)?;
     Some(Spanned { value: b[0], span })
   }
 
+  /// Reads a `u16` from the buffer and advances the cursor.
   pub fn u16(&mut self) -> Option<Spanned<u16>> {
     let (b, span) = self.take(2)?;
     Some(Spanned {
@@ -50,6 +66,7 @@ impl<'a> Cursor<'a> {
     })
   }
 
+  /// Reads a `u32` from the buffer and advances the cursor.
   pub fn u32(&mut self) -> Option<Spanned<u32>> {
     let (b, span) = self.take(4)?;
     Some(Spanned {
@@ -58,16 +75,12 @@ impl<'a> Cursor<'a> {
     })
   }
 
-  pub fn rest(&mut self) -> (&'a [u8], Span) {
-    self
-      .take(self.remaining())
-      .expect("remaining bytes always fit")
-  }
-
+  /// Creates a `CursorMark` (fencepost) at the current offset.
   pub fn mark(&self) -> CursorMark {
-    CursorMark(self.pos)
+    CursorMark(self.offset())
   }
 
+  /// Returns the span from the given mark until now.
   pub fn since_mark(&self, mark: CursorMark) -> Span {
     Span::new(mark.0 as u32, self.pos as u32)
   }
