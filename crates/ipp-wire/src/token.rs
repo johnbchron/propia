@@ -31,84 +31,62 @@ impl<B> Token<B> {
       Token::Data { data } => data.span,
     }
   }
+
+  fn map<U, F>(self, f: F) -> Token<U>
+  where
+    F: Copy + Fn(Spanned<B>) -> Spanned<U>,
+  {
+    match self {
+      Token::Header {
+        span,
+        version,
+        operation_or_status,
+        request_id,
+      } => Token::Header {
+        span,
+        version,
+        operation_or_status,
+        request_id,
+      },
+      Token::Delimiter { tag } => Token::Delimiter { tag },
+      Token::Value {
+        span,
+        tag,
+        name,
+        value,
+      } => Token::Value {
+        span,
+        tag,
+        name: name.map(f),
+        value: f(value),
+      },
+      Token::Data { data } => Token::Data { data: f(data) },
+    }
+  }
 }
 
 pub type TokenRef<'a> = Token<&'a [u8]>;
 
 pub type TokenIdx = Token<()>;
 
+pub type TokenOwned = Token<Vec<u8>>;
+
 impl<'a> TokenRef<'a> {
   pub fn detach(self) -> TokenIdx {
-    match self {
-      TokenRef::Header {
-        span,
-        version,
-        operation_or_status,
-        request_id,
-      } => TokenIdx::Header {
-        span,
-        version,
-        operation_or_status,
-        request_id,
-      },
-      TokenRef::Delimiter { tag } => TokenIdx::Delimiter { tag },
-      TokenRef::Value {
-        span,
-        tag,
-        name,
-        value,
-      } => TokenIdx::Value {
-        span,
-        tag,
-        name: name.map(|s| s.map(|_| ())),
-        value: value.map(|_| ()),
-      },
-      TokenRef::Data { data } => TokenIdx::Data {
-        data: data.map(|_| ()),
-      },
-    }
+    self.map(|s| s.map(|_| ()))
+  }
+
+  pub fn owned(self) -> TokenOwned {
+    self.map(|span| span.map(|s| s.to_vec()))
   }
 }
 
 impl TokenIdx {
   pub fn attach<'a>(self, buf: &'a [u8]) -> TokenRef<'a> {
-    match self {
-      TokenIdx::Header {
-        span,
-        version,
-        operation_or_status,
-        request_id,
-      } => TokenRef::Header {
-        span,
-        version,
-        operation_or_status,
-        request_id,
-      },
-      TokenIdx::Delimiter { tag } => TokenRef::Delimiter { tag },
-      TokenIdx::Value {
-        span,
-        tag,
-        name,
-        value,
-      } => TokenRef::Value {
-        span,
-        tag,
-        name: name.map(|s| Spanned {
-          value: &buf[s.span.start as usize..s.span.end as usize],
-          span: s.span,
-        }),
-        value: Spanned {
-          value: &buf[value.span.start as usize..value.span.end as usize],
-          span: value.span,
-        },
-      },
-      TokenIdx::Data { data } => TokenRef::Data {
-        data: Spanned {
-          value: &buf[data.span.start as usize..data.span.end as usize],
-          span: data.span,
-        },
-      },
-    }
+    self.map(|s| Spanned {
+      value: &buf[s.span.start as usize..s.span.end as usize],
+      span: s.span,
+    })
   }
 }
 
