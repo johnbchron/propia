@@ -47,7 +47,7 @@ pub(super) fn decode_attribute_or_delimiter<'a>(
   let tag = cur.u8().ok_or_else(|| Stall::Incomplete {
     min_len: 1,
     at_eof: DecodeError {
-      offset: cur.offset() as usize,
+      offset: cur.offset(),
       message: "message ended before end-of-attributes tag",
       kind: DecodeErrorKind::NoEndOfAttributes,
     },
@@ -75,10 +75,9 @@ pub(super) fn decode_attribute<'a>(
     .u16()
     .ok_or_else(|| need(cur, 2, "truncated before attribute name length"))?
     .value;
-  let (name_bytes, name_span) =
-    cur.take(name_len as usize).ok_or_else(|| {
-      need(cur, name_len as _, "truncated before attribute name")
-    })?;
+  let (name_bytes, name_span) = cur.take(name_len as u32).ok_or_else(|| {
+    need(cur, name_len as _, "truncated before attribute name")
+  })?;
   let name = match name_bytes.is_empty() {
     true => None,
     false => Some(Spanned {
@@ -116,7 +115,7 @@ pub(super) fn decode_attribute<'a>(
 
   // extract the value itself
   let (value_bytes, value_span) =
-    cur.take(value_len as usize).ok_or_else(|| {
+    cur.take(value_len as u32).ok_or_else(|| {
       need(cur, value_len as _, "truncated before attribute value")
     })?;
   let value = Spanned {

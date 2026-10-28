@@ -8,7 +8,7 @@ use crate::{
 
 pub struct TokenIterator<'a> {
   input: &'a [u8],
-  pos: usize,
+  pos: u32,
   decoder: Decoder,
   done: bool,
 }
@@ -34,17 +34,17 @@ impl<'a> Iterator for TokenIterator<'a> {
     if self.done {
       return None;
     }
-    match self.decoder.decode(&self.input[self.pos..], true) {
+    match self.decoder.decode(&self.input[self.pos as usize..], true) {
       Ok(Step::Token { token, consumed }) => {
         self.pos += consumed;
         Some(Ok(token))
       }
       Ok(Step::Body) => {
         self.done = true;
-        let span = Span::new(self.pos as u32, self.input.len() as u32);
+        let span = Span::new(self.pos, self.input.len() as u32);
         Some(Ok(Token::Data {
           data: Spanned {
-            value: &self.input[self.pos..],
+            value: &self.input[self.pos as usize..],
             span,
           },
         }))

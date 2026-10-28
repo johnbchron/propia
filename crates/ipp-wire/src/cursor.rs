@@ -38,15 +38,15 @@ impl<'a> Cursor<'a> {
   }
 
   /// Takes bytes from the buffer, returning `None` if there aren't enough.
-  pub fn take(&mut self, n: usize) -> Option<(&'a [u8], Span)> {
-    if n as u32 > self.remaining() {
+  pub fn take(&mut self, n: u32) -> Option<(&'a [u8], Span)> {
+    if n > self.remaining() {
       return None;
     }
 
     let start = self.offset();
-    self.pos += n as u32;
+    self.pos += n;
 
-    let slice = &self.buf[self.pos as usize - n..self.pos as usize];
+    let slice = &self.buf[self.pos as usize - n as usize..self.pos as usize];
     let span = Span::new(start, self.offset());
 
     Some((slice, span))

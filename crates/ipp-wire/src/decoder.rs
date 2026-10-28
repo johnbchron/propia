@@ -9,10 +9,10 @@ use self::decode::{decode_attribute_or_delimiter, decode_header};
 pub enum Step<'a> {
   /// Processing yielded complete token. The next call's `buf` must start at
   /// `buf[consumed..]`.
-  Token { token: Token<'a>, consumed: usize },
+  Token { token: Token<'a>, consumed: u32 },
   /// More bytes are needed before a token can be yielded; nothing was consumed.
   /// Call again once `buf.len() >= min_len`.
-  NeedMore { min_len: usize },
+  NeedMore { min_len: u32 },
   /// The attribute section is over; document data starts at `buf[0]`
   /// (absolute offset `Decoder::offset()`). Returned on every call from here on.
   Body,
@@ -64,7 +64,7 @@ impl Decoder {
     let mut cur = Cursor::new(buf, self.offset).ok_or_else(|| {
       self.state = State::Failed;
       DecodeError {
-        offset: self.offset as usize,
+        offset: self.offset,
         message: "buffer exceeds 4 GiB",
         kind: DecodeErrorKind::OffsetOverflow,
       }
@@ -86,8 +86,8 @@ impl Decoder {
           }
           _ => {}
         }
-        let consumed = cur.pos() as usize;
-        self.offset += consumed as u32;
+        let consumed = cur.pos();
+        self.offset += consumed;
         Ok(Step::Token { token, consumed })
       }
       Err(Stall::Incomplete { min_len, .. }) if !eof => {
@@ -102,19 +102,19 @@ impl Decoder {
 }
 
 enum Stall {
-  Incomplete { min_len: usize, at_eof: DecodeError },
+  Incomplete { min_len: u32, at_eof: DecodeError },
   Invalid(DecodeError),
 }
 
-fn need(cur: &Cursor, n: usize, message: &'static str) -> Stall {
+fn need(cur: &Cursor, n: u32, message: &'static str) -> Stall {
   Stall::Incomplete {
-    min_len: cur.pos() as usize + n,
+    min_len: cur.pos() + n,
     at_eof: DecodeError {
-      offset: cur.offset() as usize,
+      offset: cur.offset(),
       message,
       kind: crate::DecodeErrorKind::Truncated {
         needed: n,
-        available: cur.remaining() as usize,
+        available: cur.remaining(),
       },
     },
   }
@@ -126,7 +126,7 @@ fn invalid(
   kind: DecodeErrorKind,
 ) -> Stall {
   Stall::Invalid(DecodeError {
-    offset: cur.offset() as usize,
+    offset: cur.offset(),
     message,
     kind,
   })
