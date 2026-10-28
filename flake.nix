@@ -18,11 +18,11 @@
         overlays = [ (import rust-overlay) devshell.overlays.default ];
       };
 
-      toolchain_fn = p: p.rust-bin.stable.latest.default.override {
+      toolchain_fn = p: p.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
         extensions = [ "rust-src" "rust-analyzer" ];
-      };
+      });
 
-      extra_utils = with pkgs; [ gcc bacon cargo-nextest ];
+      extra_utils = with pkgs; [ gcc bacon cargo-nextest cargo-fuzz ];
     in {
       devShells.default = pkgs.devshell.mkShell {
         packages = [ (toolchain_fn pkgs) ] ++ extra_utils;
