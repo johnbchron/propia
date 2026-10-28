@@ -5,7 +5,9 @@ use crate::{
 
 use super::{Stall, invalid, need};
 
-pub(super) fn decode_header<'a>(cur: &mut Cursor) -> Result<Token<'a>, Stall> {
+pub(super) fn decode_header<'a>(
+  cur: &mut Cursor<'a>,
+) -> Result<Token<'a>, Stall> {
   // open the span for the header
   let mark = cur.mark();
 
