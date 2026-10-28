@@ -14,6 +14,7 @@ pub struct TokenIterator<'a> {
 }
 
 impl<'a> TokenIterator<'a> {
+  #[must_use]
   pub fn new(input: &'a [u8]) -> Option<Self> {
     if input.len() > u32::MAX as usize {
       return None;

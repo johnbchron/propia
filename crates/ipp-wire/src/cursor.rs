@@ -15,6 +15,7 @@ pub(crate) struct CursorMark(u32);
 
 impl<'a> Cursor<'a> {
   /// Creates a new cursor. Returns `None` if `base + buf.len() > U32::MAX`.
+  #[must_use]
   pub fn new(buf: &'a [u8], base: u32) -> Option<Self> {
     if base as u64 + buf.len() as u64 > u32::MAX as u64 {
       return None;
@@ -23,21 +24,25 @@ impl<'a> Cursor<'a> {
   }
 
   /// The current absolute offset.
+  #[must_use]
   pub fn offset(&self) -> u32 {
     self.base + self.pos
   }
 
   /// The current position within the buffer.
+  #[must_use]
   pub fn pos(&self) -> u32 {
     self.pos
   }
 
   /// The bytes remaining in the buffer.
+  #[must_use]
   pub fn remaining(&self) -> u32 {
     self.buf.len() as u32 - self.pos
   }
 
   /// Takes bytes from the buffer, returning `None` if there aren't enough.
+  #[must_use]
   pub fn take(&mut self, n: u32) -> Option<(&'a [u8], Span)> {
     if n > self.remaining() {
       return None;
@@ -53,12 +58,14 @@ impl<'a> Cursor<'a> {
   }
 
   /// Reads a `u8` from the buffer and advances the cursor.
+  #[must_use]
   pub fn u8(&mut self) -> Option<Spanned<u8>> {
     let (b, span) = self.take(1)?;
     Some(Spanned { value: b[0], span })
   }
 
   /// Reads a `u16` from the buffer and advances the cursor.
+  #[must_use]
   pub fn u16(&mut self) -> Option<Spanned<u16>> {
     let (b, span) = self.take(2)?;
     Some(Spanned {
@@ -68,6 +75,7 @@ impl<'a> Cursor<'a> {
   }
 
   /// Reads a `u32` from the buffer and advances the cursor.
+  #[must_use]
   pub fn u32(&mut self) -> Option<Spanned<u32>> {
     let (b, span) = self.take(4)?;
     Some(Spanned {
@@ -77,11 +85,13 @@ impl<'a> Cursor<'a> {
   }
 
   /// Creates a `CursorMark` (fencepost) at the current offset.
+  #[must_use]
   pub fn mark(&self) -> CursorMark {
     CursorMark(self.offset())
   }
 
   /// Returns the span from the given mark until now.
+  #[must_use]
   pub fn since_mark(&self, mark: CursorMark) -> Span {
     Span::new(mark.0, self.offset())
   }

@@ -39,6 +39,7 @@ impl Default for Decoder {
 }
 
 impl Decoder {
+  #[must_use]
   pub fn new() -> Self {
     Self {
       state: State::Header,
@@ -46,6 +47,7 @@ impl Decoder {
     }
   }
 
+  #[must_use]
   pub fn offset(&self) -> u32 {
     self.offset
   }
@@ -106,6 +108,7 @@ enum Stall {
   Invalid(DecodeError),
 }
 
+#[must_use]
 fn need(cur: &Cursor, n: u32, message: &'static str) -> Stall {
   Stall::Incomplete {
     min_len: cur.pos() + n,
@@ -120,6 +123,7 @@ fn need(cur: &Cursor, n: u32, message: &'static str) -> Stall {
   }
 }
 
+#[must_use]
 fn invalid(
   cur: &Cursor,
   message: &'static str,

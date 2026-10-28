@@ -23,6 +23,7 @@ pub enum Token<'a> {
 }
 
 impl Token<'_> {
+  #[must_use]
   pub fn span(&self) -> Span {
     match self {
       Token::Header { span, .. } => *span,

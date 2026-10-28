@@ -8,19 +8,23 @@ pub struct Span {
 }
 
 impl Span {
+  #[must_use]
   pub fn new(start: u32, end: u32) -> Self {
     debug_assert!(start <= end, "inverted span {start}..{end}");
     Span { start, end }
   }
 
+  #[must_use]
   pub fn len(self) -> u32 {
     self.end - self.start
   }
 
+  #[must_use]
   pub fn is_empty(self) -> bool {
     self.start == self.end
   }
 
+  #[must_use]
   pub fn range(self) -> Range<u32> {
     self.start..self.end
   }
@@ -33,6 +37,7 @@ pub struct Spanned<T> {
 }
 
 impl<T> Spanned<T> {
+  #[must_use]
   pub fn map<U, F>(self, f: F) -> Spanned<U>
   where
     F: FnOnce(T) -> U,
