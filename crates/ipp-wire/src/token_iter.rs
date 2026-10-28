@@ -1,7 +1,7 @@
 use std::iter::FusedIterator;
 
 use crate::{
-  DecodeError, Span, Token,
+  DecodeError, Span, TokenRef,
   decoder::{Decoder, Step},
   span::Spanned,
 };
@@ -29,7 +29,7 @@ impl<'a> TokenIterator<'a> {
 }
 
 impl<'a> Iterator for TokenIterator<'a> {
-  type Item = Result<Token<'a>, DecodeError>;
+  type Item = Result<TokenRef<'a>, DecodeError>;
 
   fn next(&mut self) -> Option<Self::Item> {
     if self.done {
@@ -47,7 +47,7 @@ impl<'a> Iterator for TokenIterator<'a> {
           u32::try_from(self.input.len())
             .expect("input proven to be shorter than u32::MAX"),
         );
-        Some(Ok(Token::Data {
+        Some(Ok(TokenRef::Data {
           data: Spanned {
             value: &self.input[self.pos as usize..],
             span,

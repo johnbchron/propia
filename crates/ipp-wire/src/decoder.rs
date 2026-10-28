@@ -1,7 +1,7 @@
 mod decode;
 
 use crate::{
-  DecodeError, DecodeErrorKind, DelimiterTag, Token, cursor::Cursor,
+  DecodeError, DecodeErrorKind, DelimiterTag, TokenRef, cursor::Cursor,
 };
 
 use self::decode::{decode_attribute_or_delimiter, decode_header};
@@ -9,7 +9,7 @@ use self::decode::{decode_attribute_or_delimiter, decode_header};
 pub enum Step<'a> {
   /// Processing yielded complete token. The next call's `buf` must start at
   /// `buf[consumed..]`.
-  Token { token: Token<'a>, consumed: u32 },
+  Token { token: TokenRef<'a>, consumed: u32 },
   /// More bytes are needed before a token can be yielded; nothing was consumed.
   /// Call again once `buf.len() >= min_len`.
   NeedMore { min_len: u32 },
@@ -82,8 +82,8 @@ impl Decoder {
       Ok(token) => {
         // state transitions
         match token {
-          Token::Header { .. } => self.state = State::Attributes,
-          Token::Delimiter { tag } if tag.value == DelimiterTag::END => {
+          TokenRef::Header { .. } => self.state = State::Attributes,
+          TokenRef::Delimiter { tag } if tag.value == DelimiterTag::END => {
             self.state = State::Body;
           }
           _ => {}

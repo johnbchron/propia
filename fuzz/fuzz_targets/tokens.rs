@@ -1,6 +1,6 @@
 #![no_main]
 
-use ipp_wire::{Span, Spanned, Token, TokenIterator, ValueTag};
+use ipp_wire::{Span, Spanned, TokenIterator, TokenRef, ValueTag};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
@@ -30,11 +30,11 @@ fn check_bytes(data: &[u8], outer: Span, s: Spanned<&[u8]>) {
   assert!(outer.start <= s.span.start && s.span.end <= outer.end);
 }
 
-fn check_token(data: &[u8], token: &Token) {
+fn check_token(data: &[u8], token: &TokenRef) {
   match *token {
-    Token::Header { span, .. } => assert_eq!(span.len(), 8),
-    Token::Delimiter { tag } => assert_eq!(tag.span.len(), 1),
-    Token::Value {
+    TokenRef::Header { span, .. } => assert_eq!(span.len(), 8),
+    TokenRef::Delimiter { tag } => assert_eq!(tag.span.len(), 1),
+    TokenRef::Value {
       span,
       tag,
       name,
@@ -50,6 +50,6 @@ fn check_token(data: &[u8], token: &Token) {
       }
       check_bytes(data, span, value);
     }
-    Token::Data { data: d } => check_bytes(data, d.span, d),
+    TokenRef::Data { data: d } => check_bytes(data, d.span, d),
   }
 }

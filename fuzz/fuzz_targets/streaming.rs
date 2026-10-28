@@ -1,10 +1,10 @@
 #![no_main]
 
-use ipp_wire::{DecodeError, Decoder, Step, Token, TokenIterator};
+use ipp_wire::{DecodeError, Decoder, Step, TokenIterator, TokenRef};
 use libfuzzer_sys::fuzz_target;
 
 struct Outcome<'a> {
-  tokens: Vec<Token<'a>>,
+  tokens: Vec<TokenRef<'a>>,
   error: Option<DecodeError>,
   body_start: Option<u32>,
 }
@@ -60,7 +60,9 @@ fuzz_target!(|data: &[u8]| {
   };
   for item in TokenIterator::new(data).unwrap() {
     match item {
-      Ok(Token::Data { data }) => expected.body_start = Some(data.span.start),
+      Ok(TokenRef::Data { data }) => {
+        expected.body_start = Some(data.span.start)
+      }
       Ok(token) => expected.tokens.push(token),
       Err(e) => expected.error = Some(e),
     }

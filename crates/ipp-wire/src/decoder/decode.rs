@@ -1,13 +1,13 @@
 use crate::{
-  DecodeError, DecodeErrorKind, DelimiterTag, Span, Spanned, Token, ValueTag,
-  cursor::Cursor,
+  DecodeError, DecodeErrorKind, DelimiterTag, Span, Spanned, TokenRef,
+  ValueTag, cursor::Cursor,
 };
 
 use super::{Stall, invalid, need};
 
 pub(super) fn decode_header<'a>(
   cur: &mut Cursor<'a>,
-) -> Result<Token<'a>, Stall> {
+) -> Result<TokenRef<'a>, Stall> {
   // open the span for the header
   let mark = cur.mark();
 
@@ -32,7 +32,7 @@ pub(super) fn decode_header<'a>(
   // end the header span
   let span = cur.since_mark(mark);
 
-  let header = Token::Header {
+  let header = TokenRef::Header {
     span,
     version: (major_version, minor_version),
     operation_or_status,
@@ -44,7 +44,7 @@ pub(super) fn decode_header<'a>(
 
 pub(super) fn decode_attribute_or_delimiter<'a>(
   cur: &mut Cursor<'a>,
-) -> Result<Token<'a>, Stall> {
+) -> Result<TokenRef<'a>, Stall> {
   // pull the first byte to see what it is
   let tag = cur.u8().ok_or_else(|| Stall::Incomplete {
     min_len: 1,
@@ -57,7 +57,7 @@ pub(super) fn decode_attribute_or_delimiter<'a>(
 
   match tag.value {
     // delimiter tag
-    0x00..=0x0F => Ok(Token::Delimiter {
+    0x00..=0x0F => Ok(TokenRef::Delimiter {
       tag: tag.map(DelimiterTag),
     }),
     // value tag: starts an attribute value
@@ -68,7 +68,7 @@ pub(super) fn decode_attribute_or_delimiter<'a>(
 pub(super) fn decode_attribute<'a>(
   cur: &mut Cursor<'a>,
   tag: Spanned<u8>,
-) -> Result<Token<'a>, Stall> {
+) -> Result<TokenRef<'a>, Stall> {
   // open the span for the attribute
   let span_start = tag.span.start;
 
@@ -134,7 +134,7 @@ pub(super) fn decode_attribute<'a>(
   // end the attribute span
   let span = Span::new(span_start, cur.offset());
 
-  Ok(Token::Value {
+  Ok(TokenRef::Value {
     span,
     tag,
     name,
