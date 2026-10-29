@@ -107,7 +107,7 @@ fn encode_value<B: AsRef<[u8]>>(
       // include the extension type as the first 4 bytes of the value
       let value_len = u16::try_from(value_bytes.len() + 4)
         .map_err(|_| EncodeError::ValueTooLong {
-          length: value_bytes.len(),
+          length: value_bytes.len() + 4,
         })?
         .to_be_bytes();
       let extension_type_bytes = kind.value.to_be_bytes();
