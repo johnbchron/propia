@@ -98,7 +98,7 @@ pub(super) fn decode_attribute<'a>(
 
   // if it's an extension value type, extract the value type first
   let tag = match tag.value {
-    0x7F => {
+    ValueTag::EXTENSION_TYPE_MAGIC_BYTE => {
       // value type is first 4 bytes of value
       value_len = value_len.checked_sub(4).ok_or_else(|| {
         invalid(
@@ -114,7 +114,7 @@ pub(super) fn decode_attribute<'a>(
       })?;
       tag.map(|_| ValueTag::Extension { kind })
     }
-    _ => tag.map(ValueTag::Known),
+    _ => tag.map(ValueTag::Standard),
   };
 
   // extract the value itself

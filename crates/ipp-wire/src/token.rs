@@ -105,8 +105,64 @@ impl DelimiterTag {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ValueTag {
-  /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`
-  Known(u8),
+  /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`. Not all values in that range are valid,
+  Standard(u8),
   /// A value type defined by an extension. It's a `0x7F` with the real type in the first 4 value bytes.
   Extension { kind: Spanned<u32> },
+}
+
+/// `"out-of-band"` values for the `"value-tag"` field, defined by Section
+/// 3.5.2 of RFC 8010.
+impl ValueTag {
+  pub const UNSUPPORTED: Self = ValueTag::Standard(0x10);
+  pub const UNKNOWN: Self = ValueTag::Standard(0x12);
+  pub const NO_VALUE: Self = ValueTag::Standard(0x13);
+}
+
+/// `integer` values for the `"value-tag"` field, defined by Section 3.5.2 of
+/// RFC 8010.
+impl ValueTag {
+  // 0x20: Unassigned integer data type
+  pub const INTEGER: Self = ValueTag::Standard(0x21);
+  pub const BOOLEAN: Self = ValueTag::Standard(0x22);
+  pub const ENUM: Self = ValueTag::Standard(0x23);
+  // 0x24..0x2f: Unassigned integer data types
+}
+
+/// `octetString` values for the `"value-tag"` field, defined by Section 3.5.2
+/// of RFC 8010.
+impl ValueTag {
+  pub const OCTETSTRING_WITH_AN_UNSPECIFIED_FORMAT: Self =
+    ValueTag::Standard(0x30);
+  pub const DATETIME: Self = ValueTag::Standard(0x31);
+  pub const RESOLUTION: Self = ValueTag::Standard(0x32);
+  pub const RANGE_OF_INTEGER: Self = ValueTag::Standard(0x33);
+  pub const BEG_COLLECTION: Self = ValueTag::Standard(0x34);
+  pub const TEXT_WITH_LANGUAGE: Self = ValueTag::Standard(0x35);
+  pub const NAME_WITH_LANGUAGE: Self = ValueTag::Standard(0x36);
+  pub const END_COLLECTION: Self = ValueTag::Standard(0x37);
+  // 0x38..0x3f: Unassigned octetString data types
+}
+
+/// `String` values for the `"value-tag"` field, defined by Section 3.5.2 of RFC
+/// 8010.
+impl ValueTag {
+  // 0x40: Unassigned character-string data type
+  pub const TEXT_WITHOUT_LANGUAGE: Self = ValueTag::Standard(0x41);
+  pub const NAME_WITHOUT_LANGUAGE: Self = ValueTag::Standard(0x42);
+  // 0x43: Unassigned character-string data type
+  pub const KEYWORD: Self = ValueTag::Standard(0x44);
+  pub const URI: Self = ValueTag::Standard(0x45);
+  pub const URI_SCHEME: Self = ValueTag::Standard(0x46);
+  pub const CHARSET: Self = ValueTag::Standard(0x47);
+  pub const NATURAL_LANGUAGE: Self = ValueTag::Standard(0x48);
+  pub const MIME_MEDIA_TYPE: Self = ValueTag::Standard(0x49);
+  pub const MEMBER_ATTR_NAME: Self = ValueTag::Standard(0x4a);
+  // 0x4b..0x5f: Unassigned character-string data types
+}
+
+impl ValueTag {
+  /// Signifies that the first 4 bytes of the value field are to be interpreted
+  /// as the type, as extended in specifications following RFC 8010
+  pub const EXTENSION_TYPE_MAGIC_BYTE: u8 = 0x7f;
 }

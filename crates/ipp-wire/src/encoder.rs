@@ -76,8 +76,8 @@ fn encode_value<B: AsRef<[u8]>>(
     .to_be_bytes();
 
   let tag_byte = match tag.value {
-    ValueTag::Known(b) => b,
-    ValueTag::Extension { .. } => 0x7F,
+    ValueTag::Standard(b) => b,
+    ValueTag::Extension { .. } => ValueTag::EXTENSION_TYPE_MAGIC_BYTE,
   };
 
   // tag and name len
@@ -91,7 +91,7 @@ fn encode_value<B: AsRef<[u8]>>(
 
   let value_bytes = value.value.as_ref();
   match tag.value {
-    ValueTag::Known(_) => {
+    ValueTag::Standard(_) => {
       // encoded value length is normal value length
       let value_len = u16::try_from(value_bytes.len())
         .map_err(|_| EncodeError::ValueTooLong {
