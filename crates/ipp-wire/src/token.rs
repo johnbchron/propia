@@ -95,12 +95,12 @@ impl TokenIdx {
 pub struct DelimiterTag(pub u8);
 
 impl DelimiterTag {
-  pub const OPERATION: Self = Self(0x01);
-  pub const JOB: Self = Self(0x02);
-  pub const END: Self = Self(0x03);
-  pub const PRINTER: Self = Self(0x04);
-  pub const UNSUPPORTED: Self = Self(0x05);
-  // there are others that are out of scope; this is just RFC 8010
+  pub const OPERATION_ATTRIBUTES_TAG: Self = Self(0x01);
+  pub const JOB_ATTRIBUTES_TAG: Self = Self(0x02);
+  pub const END_OF_ATTRIBUTES_TAG: Self = Self(0x03);
+  pub const PRINTER_ATTRIBUTES_TAG: Self = Self(0x04);
+  pub const UNSUPPORTED_ATTRIBUTES_TAG: Self = Self(0x05);
+  // there are others defined in other specs; this is just RFC 8010
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

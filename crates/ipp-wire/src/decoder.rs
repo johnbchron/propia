@@ -83,7 +83,9 @@ impl Decoder {
         // state transitions
         match token {
           TokenRef::Header { .. } => self.state = State::Attributes,
-          TokenRef::Delimiter { tag } if tag.value == DelimiterTag::END => {
+          TokenRef::Delimiter { tag }
+            if tag.value == DelimiterTag::END_OF_ATTRIBUTES_TAG =>
+          {
             self.state = State::Body;
           }
           _ => {}
