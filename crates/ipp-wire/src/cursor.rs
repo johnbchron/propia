@@ -2,8 +2,9 @@ use crate::span::Spanned;
 
 use super::Span;
 
-/// Only accepts buffers less than 4 GiB.
-pub(crate) struct Cursor<'a> {
+/// A cursor that reads bytes and emits spans. Only accepts buffers less than 4
+/// GiB.
+pub struct Cursor<'a> {
   buf: &'a [u8],
   /// base offset to use in spans
   base: u32,
@@ -11,8 +12,11 @@ pub(crate) struct Cursor<'a> {
   pos: u32,
 }
 
+/// A mark, or fencepost, that can be arbitrarily used as the start of a `Span`.
+/// Call [`Cursor::since_mark`] to close the `Span` with the current [`Cursor`]
+/// position.
 #[derive(Clone, Copy)]
-pub(crate) struct CursorMark(u32);
+pub struct CursorMark(u32);
 
 impl<'a> Cursor<'a> {
   /// Creates a new cursor. Returns `None` if `base + buf.len() > U32::MAX`.

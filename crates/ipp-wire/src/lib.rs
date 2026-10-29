@@ -6,6 +6,7 @@ mod span;
 mod token;
 mod token_iter;
 
+pub use self::cursor::*;
 pub use self::decoder::*;
 pub use self::encoder::*;
 pub use self::error::*;
