@@ -1,10 +1,4 @@
-use crate::{DelimiterTag, Spanned, Token, ValueTag};
-
-#[derive(Debug)]
-pub enum EncodeError {
-  NameTooLong { length: usize },
-  ValueTooLong { length: usize },
-}
+use crate::{DelimiterTag, EncodeError, Spanned, Token, ValueTag};
 
 pub fn encode_token<B: AsRef<[u8]>>(
   token: &Token<B>,

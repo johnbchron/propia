@@ -24,3 +24,9 @@ pub enum DecodeErrorKind {
   InvalidExtensionLength { value_len: u32 },
   OffsetOverflow,
 }
+
+#[derive(Debug)]
+pub enum EncodeError {
+  NameTooLong { length: usize },
+  ValueTooLong { length: usize },
+}
