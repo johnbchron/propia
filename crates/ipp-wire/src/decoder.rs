@@ -1,27 +1,30 @@
 mod decode;
 
+use self::decode::{decode_attribute_or_delimiter, decode_header};
 use crate::{
   DecodeError, DecodeErrorKind, DelimiterTag, TokenRef, cursor::Cursor,
 };
 
-use self::decode::{decode_attribute_or_delimiter, decode_header};
-
 pub enum Step<'a> {
   /// Processing yielded complete token. The next call's `buf` must start at
   /// `buf[consumed..]`.
-  Token { token: TokenRef<'a>, consumed: u32 },
+  Token {
+    token:    TokenRef<'a>,
+    consumed: u32,
+  },
   /// More bytes are needed before a token can be yielded; nothing was consumed.
   /// Call again once `buf.len() >= min_len`.
   NeedMore { min_len: u32 },
   /// The attribute section is over; document data starts at `buf[0]`
-  /// (absolute offset `Decoder::offset()`). Returned on every call from here on.
+  /// (absolute offset `Decoder::offset()`). Returned on every call from here
+  /// on.
   Body,
   /// A previous call returned an error.
   Done,
 }
 
 pub struct Decoder {
-  state: State,
+  state:  State,
   offset: u32,
 }
 
@@ -33,24 +36,20 @@ enum State {
 }
 
 impl Default for Decoder {
-  fn default() -> Self {
-    Self::new()
-  }
+  fn default() -> Self { Self::new() }
 }
 
 impl Decoder {
   #[must_use]
   pub fn new() -> Self {
     Self {
-      state: State::Header,
+      state:  State::Header,
       offset: 0,
     }
   }
 
   #[must_use]
-  pub fn offset(&self) -> u32 {
-    self.offset
-  }
+  pub fn offset(&self) -> u32 { self.offset }
 
   pub fn decode<'a>(
     &mut self,
@@ -66,9 +65,9 @@ impl Decoder {
     let mut cur = Cursor::new(buf, self.offset).ok_or_else(|| {
       self.state = State::Failed;
       DecodeError {
-        offset: self.offset,
+        offset:  self.offset,
         message: "buffer exceeds 4 GiB",
-        kind: DecodeErrorKind::OffsetOverflow,
+        kind:    DecodeErrorKind::OffsetOverflow,
       }
     })?;
 
@@ -114,11 +113,11 @@ enum Stall {
 fn need(cur: &Cursor, n: u32, message: &'static str) -> Stall {
   Stall::Incomplete {
     min_len: cur.pos() + n,
-    at_eof: DecodeError {
+    at_eof:  DecodeError {
       offset: cur.offset(),
       message,
       kind: crate::DecodeErrorKind::Truncated {
-        needed: n,
+        needed:    n,
         available: cur.remaining(),
       },
     },

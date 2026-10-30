@@ -4,7 +4,7 @@ use std::ops::Range;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span {
   pub start: u32,
-  pub end: u32,
+  pub end:   u32,
 }
 
 impl Span {
@@ -15,25 +15,19 @@ impl Span {
   }
 
   #[must_use]
-  pub fn len(self) -> u32 {
-    self.end - self.start
-  }
+  pub fn len(self) -> u32 { self.end - self.start }
 
   #[must_use]
-  pub fn is_empty(self) -> bool {
-    self.start == self.end
-  }
+  pub fn is_empty(self) -> bool { self.start == self.end }
 
   #[must_use]
-  pub fn range(self) -> Range<u32> {
-    self.start..self.end
-  }
+  pub fn range(self) -> Range<u32> { self.start..self.end }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Spanned<T> {
   pub value: T,
-  pub span: Span,
+  pub span:  Span,
 }
 
 impl<T> Spanned<T> {
@@ -44,7 +38,7 @@ impl<T> Spanned<T> {
   {
     Spanned {
       value: f(self.value),
-      span: self.span,
+      span:  self.span,
     }
   }
 }

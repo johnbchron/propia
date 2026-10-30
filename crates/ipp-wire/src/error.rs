@@ -2,9 +2,9 @@ use std::{error::Error, fmt};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecodeError {
-  pub offset: u32,
+  pub offset:  u32,
   pub message: &'static str,
-  pub kind: DecodeErrorKind,
+  pub kind:    DecodeErrorKind,
 }
 
 impl Error for DecodeError {}

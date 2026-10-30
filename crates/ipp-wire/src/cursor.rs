@@ -1,15 +1,14 @@
-use crate::span::Spanned;
-
 use super::Span;
+use crate::span::Spanned;
 
 /// A cursor that reads bytes and emits spans. Only accepts buffers less than 4
 /// GiB.
 pub struct Cursor<'a> {
-  buf: &'a [u8],
+  buf:  &'a [u8],
   /// base offset to use in spans
   base: u32,
   /// position within the current buffer
-  pos: u32,
+  pos:  u32,
 }
 
 /// A mark, or fencepost, that can be arbitrarily used as the start of a `Span`.
@@ -30,15 +29,11 @@ impl<'a> Cursor<'a> {
 
   /// The current absolute offset.
   #[must_use]
-  pub fn offset(&self) -> u32 {
-    self.base + self.pos
-  }
+  pub fn offset(&self) -> u32 { self.base + self.pos }
 
   /// The current position within the buffer.
   #[must_use]
-  pub fn pos(&self) -> u32 {
-    self.pos
-  }
+  pub fn pos(&self) -> u32 { self.pos }
 
   /// The bytes remaining in the buffer.
   #[must_use]
@@ -93,9 +88,7 @@ impl<'a> Cursor<'a> {
 
   /// Creates a `CursorMark` (fencepost) at the current offset.
   #[must_use]
-  pub fn mark(&self) -> CursorMark {
-    CursorMark(self.offset())
-  }
+  pub fn mark(&self) -> CursorMark { CursorMark(self.offset()) }
 
   /// Returns the span from the given mark until now.
   #[must_use]

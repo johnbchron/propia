@@ -6,10 +6,6 @@ mod span;
 mod token;
 mod token_iter;
 
-pub use self::cursor::*;
-pub use self::decoder::*;
-pub use self::encoder::*;
-pub use self::error::*;
-pub use self::span::*;
-pub use self::token::*;
-pub use self::token_iter::*;
+pub use self::{
+  cursor::*, decoder::*, encoder::*, error::*, span::*, token::*, token_iter::*,
+};

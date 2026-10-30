@@ -1,9 +1,8 @@
+use super::{Stall, invalid, need};
 use crate::{
   DecodeError, DecodeErrorKind, DelimiterTag, Span, Spanned, TokenRef,
   ValueTag, cursor::Cursor,
 };
-
-use super::{Stall, invalid, need};
 
 pub(super) fn decode_header<'a>(
   cur: &mut Cursor<'a>,
@@ -48,10 +47,10 @@ pub(super) fn decode_attribute_or_delimiter<'a>(
   // pull the first byte to see what it is
   let tag = cur.u8().ok_or_else(|| Stall::Incomplete {
     min_len: 1,
-    at_eof: DecodeError {
-      offset: cur.offset(),
+    at_eof:  DecodeError {
+      offset:  cur.offset(),
       message: "message ended before end-of-attributes tag",
-      kind: DecodeErrorKind::NoEndOfAttributes,
+      kind:    DecodeErrorKind::NoEndOfAttributes,
     },
   })?;
 
@@ -86,7 +85,7 @@ pub(super) fn decode_attribute<'a>(
   } else {
     Some(Spanned {
       value: name_bytes,
-      span: name_span,
+      span:  name_span,
     })
   };
 
@@ -128,7 +127,7 @@ pub(super) fn decode_attribute<'a>(
     })?;
   let value = Spanned {
     value: value_bytes,
-    span: value_span,
+    span:  value_span,
   };
 
   // end the attribute span

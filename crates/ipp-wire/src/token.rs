@@ -3,18 +3,18 @@ use crate::{Span, Spanned};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Token<B> {
   Header {
-    span: Span,
-    version: (Spanned<u8>, Spanned<u8>),
+    span:                Span,
+    version:             (Spanned<u8>, Spanned<u8>),
     operation_or_status: Spanned<u16>,
-    request_id: Spanned<u32>,
+    request_id:          Spanned<u32>,
   },
   Delimiter {
     tag: Spanned<DelimiterTag>,
   },
   Value {
-    span: Span,
-    tag: Spanned<ValueTag>,
-    name: Option<Spanned<B>>,
+    span:  Span,
+    tag:   Spanned<ValueTag>,
+    name:  Option<Spanned<B>>,
     value: Spanned<B>,
   },
   Data {
@@ -72,9 +72,7 @@ pub type TokenIdx = Token<()>;
 pub type TokenOwned = Token<Vec<u8>>;
 
 impl<'a> TokenRef<'a> {
-  pub fn detach(self) -> TokenIdx {
-    self.map_generic(|s| s.map(|_| ()))
-  }
+  pub fn detach(self) -> TokenIdx { self.map_generic(|s| s.map(|_| ())) }
 
   pub fn owned(self) -> TokenOwned {
     self.map_generic(|span| span.map(|s| s.to_vec()))
@@ -85,7 +83,7 @@ impl TokenIdx {
   pub fn attach<'a>(self, buf: &'a [u8]) -> TokenRef<'a> {
     self.map_generic(|s| Spanned {
       value: &buf[s.span.start as usize..s.span.end as usize],
-      span: s.span,
+      span:  s.span,
     })
   }
 }
@@ -105,9 +103,11 @@ impl DelimiterTag {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ValueTag {
-  /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`. Not all values in that range are valid,
+  /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`. Not
+  /// all values in that range are valid,
   Standard(u8),
-  /// A value type defined by an extension. It's a `0x7F` with the real type in the first 4 value bytes.
+  /// A value type defined by an extension. It's a `0x7F` with the real type in
+  /// the first 4 value bytes.
   Extension { kind: Spanned<u32> },
 }
 
