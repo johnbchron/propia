@@ -39,9 +39,9 @@ fn stream(data: &[u8], exact: bool) -> Outcome<'_> {
           body_start: Some(start as u32),
         };
       }
-      Ok(Step::Done) => unreachable!("Done before any error"),
+      Ok(Step::Errored) => unreachable!("Done before any error"),
       Err(error) => {
-        assert!(matches!(dec.decode(buf, eof), Ok(Step::Done)));
+        assert!(matches!(dec.decode(buf, eof), Ok(Step::Errored)));
         return Outcome {
           tokens,
           error: Some(error),

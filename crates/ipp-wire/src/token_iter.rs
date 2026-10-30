@@ -57,7 +57,7 @@ impl<'a> Iterator for TokenIterator<'a> {
       Ok(Step::NeedMore { .. }) => {
         unreachable!("eof decoding never needs more")
       }
-      Ok(Step::Done) => None,
+      Ok(Step::Errored) => None,
       Err(e) => {
         self.done = true;
         Some(Err(e))

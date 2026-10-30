@@ -20,7 +20,7 @@ pub enum Step<'a> {
   /// on.
   Body,
   /// A previous call returned an error.
-  Done,
+  Errored,
 }
 
 pub struct Decoder {
@@ -58,7 +58,7 @@ impl Decoder {
   ) -> Result<Step<'a>, DecodeError> {
     match &self.state {
       State::Body => return Ok(Step::Body),
-      State::Failed => return Ok(Step::Done),
+      State::Failed => return Ok(Step::Errored),
       _ => (),
     }
 
