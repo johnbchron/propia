@@ -1,5 +1,6 @@
 use crate::{DelimiterTag, EncodeError, Spanned, Token, ValueTag};
 
+/// Encodes a [`Token`] as bytes into a mutable `Vec<u8>`.
 pub fn encode_token<B: AsRef<[u8]>>(
   token: &Token<B>,
   out: &mut Vec<u8>,

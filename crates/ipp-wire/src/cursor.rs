@@ -1,24 +1,36 @@
 use super::Span;
 use crate::span::Spanned;
 
-/// A cursor that reads bytes and emits spans. Only accepts buffers less than 4
-/// GiB.
+/// A cursor over a slice that reads out bytes and emits [`Span`]s. It only
+/// accepts buffers less than 4 GiB.
+///
+/// This is used to walk along a buffer and read out data with its containing
+/// spans when decoding [`Token`](crate::Token)s. Integers are read big-endian,
+/// because that's how IPP messages work.
 pub struct Cursor<'a> {
   buf:  &'a [u8],
-  /// base offset to use in spans
+  /// the byte offset of the start of this buffer
   base: u32,
   /// position within the current buffer
   pos:  u32,
 }
 
-/// A mark, or fencepost, that can be arbitrarily used as the start of a `Span`.
-/// Call [`Cursor::since_mark`] to close the `Span` with the current [`Cursor`]
-/// position.
+/// A mark, or fencepost, that can be arbitrarily used as the start of a
+/// [`Span`]. Call [`Cursor::since_mark`] to close the [`Span`] with the current
+/// [`Cursor`] position.
+///
+/// This is typically used to mark the start of an outer [`Span`]. The inner
+/// data is then read, and then you call [`Cursor::since_mark`] to close the
+/// outer [`Span`].
 #[derive(Clone, Copy)]
 pub struct CursorMark(u32);
 
 impl<'a> Cursor<'a> {
-  /// Creates a new cursor. Returns `None` if `base + buf.len() > U32::MAX`.
+  /// Creates a new cursor. `base` is the offset of the buffer within the whole
+  /// document, to be added to [`Span`]s.
+  ///
+  /// [`Span`] uses `u32` internally, so this returns `None` if `base +
+  /// buf.len() > U32::MAX`.
   #[must_use]
   pub fn new(buf: &'a [u8], base: u32) -> Option<Self> {
     if u64::from(base) + buf.len() as u64 > u64::from(u32::MAX) {
@@ -27,11 +39,11 @@ impl<'a> Cursor<'a> {
     Some(Cursor { buf, base, pos: 0 })
   }
 
-  /// The current absolute offset.
+  /// The current absolute offset (across buffers).
   #[must_use]
   pub fn offset(&self) -> u32 { self.base + self.pos }
 
-  /// The current position within the buffer.
+  /// The position within the current buffer.
   #[must_use]
   pub fn pos(&self) -> u32 { self.pos }
 

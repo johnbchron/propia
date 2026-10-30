@@ -1,28 +1,77 @@
 use crate::{Span, Spanned};
 
+/// A single chunk of data within an IPP message, annotated with [`Span`]s.
+///
+/// This type is meant to be functional rather than to correspond to some
+/// specific spec-defined concept. Tokens are meant to be structurally decoded
+/// without a complex state machine, so header fields are grouped and not all
+/// semantic concepts are represented.
+///
+/// Every field is annotated with the span representing the location it
+/// originated from, so this type is also not meant to be constructed outside of
+/// the context of decoding a buffer. Encoding is offered as a convenience.
+///
+/// Fixed-length fields are copied into the token, and variable-length fields
+/// are generic on their representation. When emitted from the
+/// [`Decoder`](crate::Decoder), that generic is `&[u8]`, but those slices (and
+/// their lifetime) can be stripped out with [`detach`](TokenRef::detach) or
+/// converted to some other type with [`map_generic`](Token::map_generic). This
+/// property allows one, for example, to decode tokens from byte slices as they
+/// come in and then strip the references to allow dropping the buffers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Token<B> {
+  /// The header token, containing the fields always found at the beginning of
+  /// the message.
   Header {
+    /// The outer span, containing the whole header.
     span:                Span,
+    /// The `version-number`, as described in Section 3.1.1 of the RFC.
     version:             (Spanned<u8>, Spanned<u8>),
+    /// The `operation-id` or `status-code`, as described in Section 3.1.1 of
+    /// the RFC.
     operation_or_status: Spanned<u16>,
+    /// The `request-id`, as described in Section 3.1.1 of the RFC.
     request_id:          Spanned<u32>,
   },
+  /// A delimiter tag token, containing just a single byte which delimits some
+  /// state change within the message. Described by Section 3.5.1 of the RFC.
   Delimiter {
+    /// The tag in question.
     tag: Spanned<DelimiterTag>,
   },
+  /// A single value of an attribute, as described by Section 3.1.3 of the RFC.
+  ///
+  /// Specifically, either an `attribute-with-one-value` field or an
+  /// `additional-value` field. If the `name` field of this variant is
+  /// `Some(...)`, it's an `attribute-with-one-value`, and if not, it's a
+  /// `additional-value`.
   Value {
+    /// The outer span, containing the whole attribute value.
     span:  Span,
+    /// The value tag delimiting this attribute value, as described by Sections
+    /// 3.1.4, 3.1.5, and 3.5.2 of the RFC.
     tag:   Spanned<ValueTag>,
+    /// The name field of the attribute value, as described by Section 3.7 of
+    /// the RFC.
     name:  Option<Spanned<B>>,
+    /// The value field of the attribute value, as described by Section 3.9 of
+    /// the RFC.
     value: Spanned<B>,
   },
+  /// This token represents the data portion of the IPP message, as described by
+  /// Section 3.10 of the RFC. Currently, it's only ever emitted by
+  /// [`TokenIterator`](crate::TokenIterator), as the
+  /// [`Decoder`](crate::Decoder) will emit a [`Step::Body`](crate::Step) to
+  /// indicate that the data body has been reached, instead of emitting a `Data`
+  /// token.
   Data {
+    /// The data portion of the IPP message.
     data: Spanned<B>,
   },
 }
 
 impl<B> Token<B> {
+  /// Returns the outer [`Span`] which covers the whole token.
   #[must_use]
   pub fn span(&self) -> Span {
     match self {
@@ -32,6 +81,7 @@ impl<B> Token<B> {
     }
   }
 
+  /// Maps the backing variable-length type to a different type.
   pub fn map_generic<U, F>(self, f: F) -> Token<U>
   where
     F: Copy + Fn(Spanned<B>) -> Spanned<U>,
@@ -65,21 +115,27 @@ impl<B> Token<B> {
   }
 }
 
+/// A [`Token`] backed by a byte slice for variable-length fields.
 pub type TokenRef<'a> = Token<&'a [u8]>;
 
+/// A [`Token`] type without any backing data for variable-length fields.
 pub type TokenIdx = Token<()>;
 
+/// A [`Token`] type with a `Vec<u8>` for variable-length fields.
 pub type TokenOwned = Token<Vec<u8>>;
 
 impl<'a> TokenRef<'a> {
+  /// Converts a [`TokenRef`] to a [`TokenIdx`].
   pub fn detach(self) -> TokenIdx { self.map_generic(|s| s.map(|_| ())) }
 
+  /// Converts a [`TokenRef`] to a [`TokenOwned`].
   pub fn owned(self) -> TokenOwned {
     self.map_generic(|span| span.map(|s| s.to_vec()))
   }
 }
 
 impl TokenIdx {
+  /// Converts a [`TokenIdx`] to a [`TokenRef`], given a byte buffer.
   pub fn attach<'a>(self, buf: &'a [u8]) -> TokenRef<'a> {
     self.map_generic(|s| Spanned {
       value: &buf[s.span.start as usize..s.span.end as usize],
@@ -88,10 +144,11 @@ impl TokenIdx {
   }
 }
 
-/// Only in the range `0x00..=0x0F`
+/// A delimiter tag. Only in the range `0x00..=0x0F`
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DelimiterTag(pub u8);
 
+#[allow(missing_docs)]
 impl DelimiterTag {
   pub const OPERATION_ATTRIBUTES_TAG: Self = Self(0x01);
   pub const JOB_ATTRIBUTES_TAG: Self = Self(0x02);
@@ -101,6 +158,7 @@ impl DelimiterTag {
   // there are others defined in other specs; this is just RFC 8010
 }
 
+/// A tag that delimits the start of a [`Token::Value`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ValueTag {
   /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`. Not
@@ -108,11 +166,15 @@ pub enum ValueTag {
   Standard(u8),
   /// A value type defined by an extension. It's a `0x7F` with the real type in
   /// the first 4 value bytes.
-  Extension { kind: Spanned<u32> },
+  Extension {
+    /// The 4-byte extension type.
+    kind: Spanned<u32>,
+  },
 }
 
 /// `"out-of-band"` values for the `"value-tag"` field, defined by Section
 /// 3.5.2 of RFC 8010.
+#[allow(missing_docs)]
 impl ValueTag {
   pub const UNSUPPORTED: Self = ValueTag::Standard(0x10);
   pub const UNKNOWN: Self = ValueTag::Standard(0x12);
@@ -121,6 +183,7 @@ impl ValueTag {
 
 /// `integer` values for the `"value-tag"` field, defined by Section 3.5.2 of
 /// RFC 8010.
+#[allow(missing_docs)]
 impl ValueTag {
   // 0x20: Unassigned integer data type
   pub const INTEGER: Self = ValueTag::Standard(0x21);
@@ -131,6 +194,7 @@ impl ValueTag {
 
 /// `octetString` values for the `"value-tag"` field, defined by Section 3.5.2
 /// of RFC 8010.
+#[allow(missing_docs)]
 impl ValueTag {
   pub const OCTETSTRING_WITH_AN_UNSPECIFIED_FORMAT: Self =
     ValueTag::Standard(0x30);
@@ -146,6 +210,7 @@ impl ValueTag {
 
 /// `String` values for the `"value-tag"` field, defined by Section 3.5.2 of RFC
 /// 8010.
+#[allow(missing_docs)]
 impl ValueTag {
   // 0x40: Unassigned character-string data type
   pub const TEXT_WITHOUT_LANGUAGE: Self = ValueTag::Standard(0x41);

@@ -6,6 +6,8 @@ use crate::{
   span::Spanned,
 };
 
+/// A convenience iterator on top of [`Decoder`] for circumstances when you have
+/// a slice over the entire input data.
 pub struct TokenIterator<'a> {
   input:   &'a [u8],
   pos:     u32,
@@ -14,6 +16,7 @@ pub struct TokenIterator<'a> {
 }
 
 impl<'a> TokenIterator<'a> {
+  /// Creates a new [`TokenIterator`].
   #[must_use]
   pub fn new(input: &'a [u8]) -> Option<Self> {
     if input.len() > u32::MAX as usize {

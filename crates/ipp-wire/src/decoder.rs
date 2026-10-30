@@ -5,29 +5,62 @@ use crate::{
   DecodeError, DecodeErrorKind, DelimiterTag, TokenRef, cursor::Cursor,
 };
 
+/// The output of a run of [`Decoder::decode`].
 pub enum Step<'a> {
-  /// Processing yielded complete token. The next call's `buf` must start at
-  /// `buf[consumed..]`.
+  /// Processing on the given buffer yielded a complete [`Token`](crate::Token).
+  /// For the next call, slice out the first `consumed` bytes.
   Token {
+    /// The yielded [`Token`](crate::Token).
     token:    TokenRef<'a>,
+    /// The number of bytes consumed, which should be excluded from the next
+    /// call.
     consumed: u32,
   },
-  /// More bytes are needed before a token can be yielded; nothing was consumed.
-  /// Call again once `buf.len() >= min_len`.
-  NeedMore { min_len: u32 },
-  /// The attribute section is over; document data starts at `buf[0]`
-  /// (absolute offset `Decoder::offset()`). Returned on every call from here
-  /// on.
+  /// More bytes are needed before a token can be yielded; none of the buffer
+  /// bytes are considered to be consumed. Call again once `buf.len() >=
+  /// min_len`.
+  NeedMore {
+    /// At least this many bytes (total) are needed in the buffer before a
+    /// [`Token`](crate::Token) can be yielded.
+    min_len: u32,
+  },
+  /// The attribute section is over; document data starts at `buf[0]`. The
+  /// absolute (across buffers) offset of the data block is can be found via
+  /// [`Decoder::offset`]. Returned on every call from here on.
   Body,
   /// A previous call returned an error.
   Errored,
 }
 
+/// An IPP wire format (RFC 8010) decoder.
+///
+/// This decoder is built on a sans-IO design, meaning that it doesn't touch or
+/// drive any IO. To drive the decoder, call [`Decoder::decode`] with the data
+/// you have. Set `eof` if you know that no more data is coming. If it doesn't
+/// error, it will give back a [`Step`]. There are 4 possible output states
+/// encoded in [`Step`]:
+/// - [`Step::Token`](crate::Token): Enough data to decode a
+///   [`Token`](crate::Token) was present, and a single [`Token`](crate::Token)
+///   was yielded. `consumed` is the number of bytes that token covered, so call
+///   [`decode`](Decoder::decode) again with `buf[consumed..]`.
+/// - [`Step::NeedMore`]: Not enough data to decode a [`Token`](crate::Token)
+///   was present, so acquire more data and call [`decode`](Decoder::decode)
+///   again when at least `min_len` bytes are present in the buffer. If you
+///   reach the end of your input, set `eof`.
+/// - [`Step::Body`]: Every last token has been yielded from the attribute data
+///   of the IPP message, and the rest of the input (`buf[..]`) is body data. If
+///   you need the offset since the start of decoding, that's available via
+///   [`Decoder::offset`]. This state is fused, meaning that every subsequent
+///   call to [`decode`](Decoder::decode) will also return [`Step::Body`].
+/// - [`Step::Errored`]: A previous call to [`decode`](Decoder::decode) yielded
+///   an error. This state is fused, meaning that every subsequent call to
+///   [`decode`](Decoder::decode) will also return [`Step::Errored`].
 pub struct Decoder {
   state:  State,
   offset: u32,
 }
 
+/// Internal state for the decoder.
 enum State {
   Header,
   Attributes,
@@ -40,6 +73,7 @@ impl Default for Decoder {
 }
 
 impl Decoder {
+  /// Creates a new [`Decoder`].
   #[must_use]
   pub fn new() -> Self {
     Self {
@@ -49,8 +83,12 @@ impl Decoder {
   }
 
   #[must_use]
+  /// Returns the absolute offset the decoder is at, i.e. the total number of
+  /// bytes it has reported `consumed`.
   pub fn offset(&self) -> u32 { self.offset }
 
+  /// Runs the decoder on a chunk of data. See the docs on [`Decoder`] for
+  /// instructions.
   pub fn decode<'a>(
     &mut self,
     buf: &'a [u8],
@@ -104,11 +142,14 @@ impl Decoder {
   }
 }
 
+// A failure reported by the decoder functions.
 enum Stall {
   Incomplete { min_len: u32, at_eof: DecodeError },
   Invalid(DecodeError),
 }
 
+/// Helper function for the decoder functions, reporting that more bytes are
+/// needed.
 #[must_use]
 fn need(cur: &Cursor, n: u32, message: &'static str) -> Stall {
   Stall::Incomplete {
@@ -124,6 +165,8 @@ fn need(cur: &Cursor, n: u32, message: &'static str) -> Stall {
   }
 }
 
+/// Helper function for the decoder functions, reporting a structural decoding
+/// error.
 #[must_use]
 fn invalid(
   cur: &Cursor,
