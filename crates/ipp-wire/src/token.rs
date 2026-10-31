@@ -9,7 +9,8 @@ use crate::{Span, Spanned};
 ///
 /// Every field is annotated with the span representing the location it
 /// originated from, so this type is also not meant to be constructed outside of
-/// the context of decoding a buffer. Encoding is offered as a convenience.
+/// the context of decoding a buffer. If you need to construct arbitrary tokens
+/// or encode tokens, use [`Token`].
 ///
 /// Fixed-length fields are copied into the token, and variable-length fields
 /// are generic on their representation. When emitted from the
@@ -116,6 +117,32 @@ impl<B> DecodedToken<B> {
       DecodedToken::Data { data } => DecodedToken::Data { data: f(data) },
     }
   }
+
+  /// Drops all span information referring to the original buffer and returns a
+  /// [`Token`].
+  pub fn forget_spans(self) -> Token<B> {
+    match self {
+      DecodedToken::Header {
+        version,
+        operation_or_status,
+        request_id,
+        ..
+      } => Token::Header {
+        version:             (version.0.value, version.1.value),
+        operation_or_status: operation_or_status.value,
+        request_id:          request_id.value,
+      },
+      DecodedToken::Delimiter { tag } => Token::Delimiter { tag: tag.value },
+      DecodedToken::Value {
+        tag, name, value, ..
+      } => Token::Value {
+        tag:   tag.value,
+        name:  name.map(|n| n.value),
+        value: value.value,
+      },
+      DecodedToken::Data { data } => Token::Data { data: data.value },
+    }
+  }
 }
 
 /// A [`DecodedToken`] backed by a byte slice for variable-length fields.
@@ -131,13 +158,117 @@ impl<'a> DecodedTokenRef<'a> {
 
 impl DecodedTokenIdx {
   /// Converts a [`DecodedTokenIdx`] to a [`DecodedTokenRef`], given a byte
-  /// buffer.
+  /// buffer, using the contained spans.
   pub fn attach<'a>(self, buf: &'a [u8]) -> DecodedTokenRef<'a> {
     self.map_generic(|s| Spanned {
       value: &buf[s.span.start as usize..s.span.end as usize],
       span:  s.span,
     })
   }
+}
+
+/// A single chunk of data within an IPP message, annotated with [`Span`]s.
+///
+/// This type is meant to be functional rather than to correspond to some
+/// specific spec-defined concept. Tokens are meant to be structurally decoded
+/// without a complex state machine, so header fields are grouped and not all
+/// semantic concepts are represented.
+///
+/// This is the span-stripped version of [`DecodedToken`], which is suitable for
+/// being constructed arbitrarily. Encode to bytes with
+/// [`encode_token`](crate::encode_token)
+///
+/// Fixed-length fields are copied into the token, and variable-length fields
+/// are generic on their representation. When emitted from the
+/// [`Decoder`](crate::Decoder), that generic is `&[u8]`, but those slices (and
+/// their lifetime) can be stripped out with [`detach`](DecodedTokenRef::detach)
+/// or converted to some other type with
+/// [`map_generic`](DecodedToken::map_generic). This property allows one, for
+/// example, to decode tokens from byte slices as they come in and then strip
+/// the references to allow dropping the buffers.
+pub enum Token<B> {
+  /// The header token, containing the fields always found at the beginning of
+  /// the message.
+  Header {
+    /// The `version-number`, as described in Section 3.1.1 of the RFC.
+    version:             (u8, u8),
+    /// The `operation-id` or `status-code`, as described in Section 3.1.1 of
+    /// the RFC.
+    operation_or_status: u16,
+    /// The `request-id`, as described in Section 3.1.1 of the RFC.
+    request_id:          u32,
+  },
+  /// A delimiter tag token, containing just a single byte which delimits some
+  /// state change within the message. Described by Section 3.5.1 of the RFC.
+  Delimiter {
+    /// The tag in question.
+    tag: DelimiterTag,
+  },
+  /// A single value of an attribute, as described by Section 3.1.3 of the RFC.
+  ///
+  /// Specifically, either an `attribute-with-one-value` field or an
+  /// `additional-value` field. If the `name` field of this variant is
+  /// `Some(...)`, it's an `attribute-with-one-value`, and if not, it's a
+  /// `additional-value`.
+  Value {
+    /// The value tag delimiting this attribute value, as described by Sections
+    /// 3.1.4, 3.1.5, and 3.5.2 of the RFC.
+    tag:   ValueTag,
+    /// The name field of the attribute value, as described by Section 3.7 of
+    /// the RFC.
+    name:  Option<B>,
+    /// The value field of the attribute value, as described by Section 3.9 of
+    /// the RFC.
+    value: B,
+  },
+  /// This token represents the data portion of the IPP message, as described by
+  /// Section 3.10 of the RFC. Currently, it's only ever emitted by
+  /// [`DecodeIterator`](crate::DecodeIterator), as the
+  /// [`Decoder`](crate::Decoder) will emit a [`Step::Body`](crate::Step) to
+  /// indicate that the data body has been reached, instead of emitting a `Data`
+  /// token.
+  Data {
+    /// The data portion of the IPP message.
+    data: B,
+  },
+}
+
+impl<B> Token<B> {
+  /// Maps the backing variable-length type to a different type.
+  pub fn map_generic<U, F>(self, f: F) -> Token<U>
+  where
+    F: Copy + Fn(B) -> U,
+  {
+    match self {
+      Token::Header {
+        version,
+        operation_or_status,
+        request_id,
+      } => Token::Header {
+        version,
+        operation_or_status,
+        request_id,
+      },
+      Token::Delimiter { tag } => Token::Delimiter { tag },
+      Token::Value { tag, name, value } => Token::Value {
+        tag,
+        name: name.map(f),
+        value: f(value),
+      },
+      Token::Data { data } => Token::Data { data: f(data) },
+    }
+  }
+}
+
+/// A [`Token`] backed by a byte slice for variable-length fields.
+pub type TokenRef<'a> = Token<&'a [u8]>;
+
+/// A [`Token`] type without any backing data for variable-length fields.
+pub type TokenIdx = Token<()>;
+
+impl<'a> TokenRef<'a> {
+  /// Converts a [`TokenRef`] to a [`TokenIdx`].
+  pub fn detach(self) -> TokenIdx { self.map_generic(|_| ()) }
 }
 
 /// A delimiter tag. Only in the range `0x00..=0x0F`
