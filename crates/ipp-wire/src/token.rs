@@ -124,17 +124,9 @@ pub type DecodedTokenRef<'a> = DecodedToken<&'a [u8]>;
 /// A [`DecodedToken`] type without any backing data for variable-length fields.
 pub type DecodedTokenIdx = DecodedToken<()>;
 
-/// A [`DecodedToken`] type with a `Vec<u8>` for variable-length fields.
-pub type DecodedTokenOwned = DecodedToken<Vec<u8>>;
-
 impl<'a> DecodedTokenRef<'a> {
   /// Converts a [`DecodedTokenRef`] to a [`DecodedTokenIdx`].
   pub fn detach(self) -> DecodedTokenIdx { self.map_generic(|s| s.map(|_| ())) }
-
-  /// Converts a [`DecodedTokenRef`] to a [`DecodedTokenOwned`].
-  pub fn owned(self) -> DecodedTokenOwned {
-    self.map_generic(|span| span.map(|s| s.to_vec()))
-  }
 }
 
 impl DecodedTokenIdx {
