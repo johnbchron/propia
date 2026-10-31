@@ -7,14 +7,15 @@ fuzz_target!(|data: &[u8]| {
   let mut out = Vec::new();
   let mut end = 0;
   for item in DecodeIterator::new(data).unwrap() {
-    let Ok(token) = item else { break };
+    let Ok(decoded_token) = item else { break };
+    let token = decoded_token.forget_spans();
     let before = out.len();
     encode_token(&token, &mut out).expect("decoded tokens are encodable");
-    let span = token.span();
+    let span = decoded_token.span();
     assert_eq!(
       &out[before..],
       &data[span.start as usize..span.end as usize],
-      "re-encoding changed {token:?}"
+      "re-encoding changed {decoded_token:?}"
     );
     end = span.end;
   }
