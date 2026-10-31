@@ -1,22 +1,22 @@
 use std::iter::FusedIterator;
 
 use crate::{
-  DecodeError, Span, TokenRef,
+  DecodeError, DecodedTokenRef, Span,
   decoder::{Decoder, Step},
   span::Spanned,
 };
 
 /// A convenience iterator on top of [`Decoder`] for circumstances when you have
 /// a slice over the entire input data.
-pub struct TokenIterator<'a> {
+pub struct DecodeIterator<'a> {
   input:   &'a [u8],
   pos:     u32,
   decoder: Decoder,
   done:    bool,
 }
 
-impl<'a> TokenIterator<'a> {
-  /// Creates a new [`TokenIterator`].
+impl<'a> DecodeIterator<'a> {
+  /// Creates a new [`DecodeIterator`].
   #[must_use]
   pub fn new(input: &'a [u8]) -> Option<Self> {
     if input.len() > u32::MAX as usize {
@@ -31,8 +31,8 @@ impl<'a> TokenIterator<'a> {
   }
 }
 
-impl<'a> Iterator for TokenIterator<'a> {
-  type Item = Result<TokenRef<'a>, DecodeError>;
+impl<'a> Iterator for DecodeIterator<'a> {
+  type Item = Result<DecodedTokenRef<'a>, DecodeError>;
 
   fn next(&mut self) -> Option<Self::Item> {
     if self.done {
@@ -50,7 +50,7 @@ impl<'a> Iterator for TokenIterator<'a> {
           u32::try_from(self.input.len())
             .expect("input proven to be shorter than u32::MAX"),
         );
-        Some(Ok(TokenRef::Data {
+        Some(Ok(DecodedTokenRef::Data {
           data: Spanned {
             value: &self.input[self.pos as usize..],
             span,
@@ -69,4 +69,4 @@ impl<'a> Iterator for TokenIterator<'a> {
   }
 }
 
-impl FusedIterator for TokenIterator<'_> {}
+impl FusedIterator for DecodeIterator<'_> {}

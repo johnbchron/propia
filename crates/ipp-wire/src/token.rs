@@ -14,12 +14,13 @@ use crate::{Span, Spanned};
 /// Fixed-length fields are copied into the token, and variable-length fields
 /// are generic on their representation. When emitted from the
 /// [`Decoder`](crate::Decoder), that generic is `&[u8]`, but those slices (and
-/// their lifetime) can be stripped out with [`detach`](TokenRef::detach) or
-/// converted to some other type with [`map_generic`](Token::map_generic). This
-/// property allows one, for example, to decode tokens from byte slices as they
-/// come in and then strip the references to allow dropping the buffers.
+/// their lifetime) can be stripped out with [`detach`](DecodedTokenRef::detach)
+/// or converted to some other type with
+/// [`map_generic`](DecodedToken::map_generic). This property allows one, for
+/// example, to decode tokens from byte slices as they come in and then strip
+/// the references to allow dropping the buffers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Token<B> {
+pub enum DecodedToken<B> {
   /// The header token, containing the fields always found at the beginning of
   /// the message.
   Header {
@@ -60,7 +61,7 @@ pub enum Token<B> {
   },
   /// This token represents the data portion of the IPP message, as described by
   /// Section 3.10 of the RFC. Currently, it's only ever emitted by
-  /// [`TokenIterator`](crate::TokenIterator), as the
+  /// [`DecodeIterator`](crate::DecodeIterator), as the
   /// [`Decoder`](crate::Decoder) will emit a [`Step::Body`](crate::Step) to
   /// indicate that the data body has been reached, instead of emitting a `Data`
   /// token.
@@ -70,73 +71,76 @@ pub enum Token<B> {
   },
 }
 
-impl<B> Token<B> {
+impl<B> DecodedToken<B> {
   /// Returns the outer [`Span`] which covers the whole token.
   #[must_use]
   pub fn span(&self) -> Span {
     match self {
-      Token::Header { span, .. } | Token::Value { span, .. } => *span,
-      Token::Delimiter { tag } => tag.span,
-      Token::Data { data } => data.span,
+      DecodedToken::Header { span, .. } | DecodedToken::Value { span, .. } => {
+        *span
+      }
+      DecodedToken::Delimiter { tag } => tag.span,
+      DecodedToken::Data { data } => data.span,
     }
   }
 
   /// Maps the backing variable-length type to a different type.
-  pub fn map_generic<U, F>(self, f: F) -> Token<U>
+  pub fn map_generic<U, F>(self, f: F) -> DecodedToken<U>
   where
     F: Copy + Fn(Spanned<B>) -> Spanned<U>,
   {
     match self {
-      Token::Header {
+      DecodedToken::Header {
         span,
         version,
         operation_or_status,
         request_id,
-      } => Token::Header {
+      } => DecodedToken::Header {
         span,
         version,
         operation_or_status,
         request_id,
       },
-      Token::Delimiter { tag } => Token::Delimiter { tag },
-      Token::Value {
+      DecodedToken::Delimiter { tag } => DecodedToken::Delimiter { tag },
+      DecodedToken::Value {
         span,
         tag,
         name,
         value,
-      } => Token::Value {
+      } => DecodedToken::Value {
         span,
         tag,
         name: name.map(f),
         value: f(value),
       },
-      Token::Data { data } => Token::Data { data: f(data) },
+      DecodedToken::Data { data } => DecodedToken::Data { data: f(data) },
     }
   }
 }
 
-/// A [`Token`] backed by a byte slice for variable-length fields.
-pub type TokenRef<'a> = Token<&'a [u8]>;
+/// A [`DecodedToken`] backed by a byte slice for variable-length fields.
+pub type DecodedTokenRef<'a> = DecodedToken<&'a [u8]>;
 
-/// A [`Token`] type without any backing data for variable-length fields.
-pub type TokenIdx = Token<()>;
+/// A [`DecodedToken`] type without any backing data for variable-length fields.
+pub type DecodedTokenIdx = DecodedToken<()>;
 
-/// A [`Token`] type with a `Vec<u8>` for variable-length fields.
-pub type TokenOwned = Token<Vec<u8>>;
+/// A [`DecodedToken`] type with a `Vec<u8>` for variable-length fields.
+pub type DecodedTokenOwned = DecodedToken<Vec<u8>>;
 
-impl<'a> TokenRef<'a> {
-  /// Converts a [`TokenRef`] to a [`TokenIdx`].
-  pub fn detach(self) -> TokenIdx { self.map_generic(|s| s.map(|_| ())) }
+impl<'a> DecodedTokenRef<'a> {
+  /// Converts a [`DecodedTokenRef`] to a [`DecodedTokenIdx`].
+  pub fn detach(self) -> DecodedTokenIdx { self.map_generic(|s| s.map(|_| ())) }
 
-  /// Converts a [`TokenRef`] to a [`TokenOwned`].
-  pub fn owned(self) -> TokenOwned {
+  /// Converts a [`DecodedTokenRef`] to a [`DecodedTokenOwned`].
+  pub fn owned(self) -> DecodedTokenOwned {
     self.map_generic(|span| span.map(|s| s.to_vec()))
   }
 }
 
-impl TokenIdx {
-  /// Converts a [`TokenIdx`] to a [`TokenRef`], given a byte buffer.
-  pub fn attach<'a>(self, buf: &'a [u8]) -> TokenRef<'a> {
+impl DecodedTokenIdx {
+  /// Converts a [`DecodedTokenIdx`] to a [`DecodedTokenRef`], given a byte
+  /// buffer.
+  pub fn attach<'a>(self, buf: &'a [u8]) -> DecodedTokenRef<'a> {
     self.map_generic(|s| Spanned {
       value: &buf[s.span.start as usize..s.span.end as usize],
       span:  s.span,
@@ -158,7 +162,7 @@ impl DelimiterTag {
   // there are others defined in other specs; this is just RFC 8010
 }
 
-/// A tag that delimits the start of a [`Token::Value`].
+/// A tag that delimits the start of a [`DecodedToken::Value`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ValueTag {
   /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`. Not

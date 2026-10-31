@@ -5,8 +5,8 @@ use crate::span::Spanned;
 /// accepts buffers less than 4 GiB.
 ///
 /// This is used to walk along a buffer and read out data with its containing
-/// spans when decoding [`Token`](crate::Token)s. Integers are read big-endian,
-/// because that's how IPP messages work.
+/// spans when decoding [`DecodedToken`](crate::DecodedToken)s. Integers are
+/// read big-endian, because that's how IPP messages work.
 pub struct Cursor<'a> {
   buf:  &'a [u8],
   /// the byte offset of the start of this buffer

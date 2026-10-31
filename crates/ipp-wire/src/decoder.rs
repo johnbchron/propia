@@ -2,16 +2,17 @@ mod decode;
 
 use self::decode::{decode_attribute_or_delimiter, decode_header};
 use crate::{
-  DecodeError, DecodeErrorKind, DelimiterTag, TokenRef, cursor::Cursor,
+  DecodeError, DecodeErrorKind, DecodedTokenRef, DelimiterTag, cursor::Cursor,
 };
 
 /// The output of a run of [`Decoder::decode`].
 pub enum Step<'a> {
-  /// Processing on the given buffer yielded a complete [`Token`](crate::Token).
-  /// For the next call, slice out the first `consumed` bytes.
+  /// Processing on the given buffer yielded a complete
+  /// [`DecodedToken`](crate::DecodedToken). For the next call, slice out the
+  /// first `consumed` bytes.
   Token {
-    /// The yielded [`Token`](crate::Token).
-    token:    TokenRef<'a>,
+    /// The yielded [`DecodedToken`](crate::DecodedToken).
+    token:    DecodedTokenRef<'a>,
     /// The number of bytes consumed, which should be excluded from the next
     /// call.
     consumed: u32,
@@ -21,7 +22,7 @@ pub enum Step<'a> {
   /// min_len`.
   NeedMore {
     /// At least this many bytes (total) are needed in the buffer before a
-    /// [`Token`](crate::Token) can be yielded.
+    /// [`DecodedToken`](crate::DecodedToken) can be yielded.
     min_len: u32,
   },
   /// The attribute section is over; document data starts at `buf[0]`. The
@@ -39,14 +40,15 @@ pub enum Step<'a> {
 /// you have. Set `eof` if you know that no more data is coming. If it doesn't
 /// error, it will give back a [`Step`]. There are 4 possible output states
 /// encoded in [`Step`]:
-/// - [`Step::Token`](crate::Token): Enough data to decode a
-///   [`Token`](crate::Token) was present, and a single [`Token`](crate::Token)
-///   was yielded. `consumed` is the number of bytes that token covered, so call
-///   [`decode`](Decoder::decode) again with `buf[consumed..]`.
-/// - [`Step::NeedMore`]: Not enough data to decode a [`Token`](crate::Token)
-///   was present, so acquire more data and call [`decode`](Decoder::decode)
-///   again when at least `min_len` bytes are present in the buffer. If you
-///   reach the end of your input, set `eof`.
+/// - [`Step::DecodedToken`](crate::DecodedToken): Enough data to decode a
+///   [`DecodedToken`](crate::DecodedToken) was present, and a single
+///   [`DecodedToken`](crate::DecodedToken) was yielded. `consumed` is the
+///   number of bytes that token covered, so call [`decode`](Decoder::decode)
+///   again with `buf[consumed..]`.
+/// - [`Step::NeedMore`]: Not enough data to decode a
+///   [`DecodedToken`](crate::DecodedToken) was present, so acquire more data
+///   and call [`decode`](Decoder::decode) again when at least `min_len` bytes
+///   are present in the buffer. If you reach the end of your input, set `eof`.
 /// - [`Step::Body`]: Every last token has been yielded from the attribute data
 ///   of the IPP message, and the rest of the input (`buf[..]`) is body data. If
 ///   you need the offset since the start of decoding, that's available via
@@ -119,8 +121,8 @@ impl Decoder {
       Ok(token) => {
         // state transitions
         match token {
-          TokenRef::Header { .. } => self.state = State::Attributes,
-          TokenRef::Delimiter { tag }
+          DecodedTokenRef::Header { .. } => self.state = State::Attributes,
+          DecodedTokenRef::Delimiter { tag }
             if tag.value == DelimiterTag::END_OF_ATTRIBUTES_TAG =>
           {
             self.state = State::Body;

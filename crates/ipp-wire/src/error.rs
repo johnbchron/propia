@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-/// An error encountered in decoding [`Token`](crate::Token)s.
+/// An error encountered in decoding [`DecodedToken`](crate::DecodedToken)s.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecodeError {
   /// The (absolute) byte offset the error occured at.
@@ -45,7 +45,7 @@ pub enum DecodeErrorKind {
   OffsetOverflow,
 }
 
-/// An error encountered in encoding [`Token`](crate::Token)s.
+/// An error encountered in encoding [`DecodedToken`](crate::DecodedToken)s.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EncodeError {
   /// The length of the name was too large to fit in a `u16`.

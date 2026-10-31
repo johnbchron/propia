@@ -1,22 +1,22 @@
-use crate::{DelimiterTag, EncodeError, Spanned, Token, ValueTag};
+use crate::{DecodedToken, DelimiterTag, EncodeError, Spanned, ValueTag};
 
-/// Encodes a [`Token`] as bytes into a mutable `Vec<u8>`.
+/// Encodes a [`DecodedToken`] as bytes into a mutable `Vec<u8>`.
 pub fn encode_token<B: AsRef<[u8]>>(
-  token: &Token<B>,
+  token: &DecodedToken<B>,
   out: &mut Vec<u8>,
 ) -> Result<(), EncodeError> {
   match token {
-    Token::Header {
+    DecodedToken::Header {
       version,
       operation_or_status,
       request_id,
       ..
     } => encode_header(version, operation_or_status, request_id, out),
-    Token::Delimiter { tag } => encode_delimiter(tag, out),
-    Token::Value {
+    DecodedToken::Delimiter { tag } => encode_delimiter(tag, out),
+    DecodedToken::Value {
       tag, name, value, ..
     } => encode_value(tag, name.as_ref(), value, out),
-    Token::Data { data } => {
+    DecodedToken::Data { data } => {
       out.extend_from_slice(data.value.as_ref());
       Ok(())
     }
