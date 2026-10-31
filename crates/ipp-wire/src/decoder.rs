@@ -40,7 +40,7 @@ pub enum Step<'a> {
 /// you have. Set `eof` if you know that no more data is coming. If it doesn't
 /// error, it will give back a [`Step`]. There are 4 possible output states
 /// encoded in [`Step`]:
-/// - [`Step::DecodedToken`](crate::DecodedToken): Enough data to decode a
+/// - [`Step::Token`](crate::Token): Enough data to decode a
 ///   [`DecodedToken`](crate::DecodedToken) was present, and a single
 ///   [`DecodedToken`](crate::DecodedToken) was yielded. `consumed` is the
 ///   number of bytes that token covered, so call [`decode`](Decoder::decode)

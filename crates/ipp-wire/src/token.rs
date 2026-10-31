@@ -167,7 +167,7 @@ impl DecodedTokenIdx {
   }
 }
 
-/// A single chunk of data within an IPP message, annotated with [`Span`]s.
+/// A single chunk of data within an IPP message.
 ///
 /// This type is meant to be functional rather than to correspond to some
 /// specific spec-defined concept. Tokens are meant to be structurally decoded
@@ -176,16 +176,12 @@ impl DecodedTokenIdx {
 ///
 /// This is the span-stripped version of [`DecodedToken`], which is suitable for
 /// being constructed arbitrarily. Encode to bytes with
-/// [`encode_token`](crate::encode_token)
+/// [`encode_token`](crate::encode_token).
 ///
 /// Fixed-length fields are copied into the token, and variable-length fields
-/// are generic on their representation. When emitted from the
-/// [`Decoder`](crate::Decoder), that generic is `&[u8]`, but those slices (and
-/// their lifetime) can be stripped out with [`detach`](DecodedTokenRef::detach)
-/// or converted to some other type with
-/// [`map_generic`](DecodedToken::map_generic). This property allows one, for
-/// example, to decode tokens from byte slices as they come in and then strip
-/// the references to allow dropping the buffers.
+/// are generic on their representation. The generic used for variable-length
+/// fields can be converted to some other type with
+/// [`map_generic`](Token::map_generic).
 pub enum Token<B> {
   /// The header token, containing the fields always found at the beginning of
   /// the message.
@@ -222,11 +218,7 @@ pub enum Token<B> {
     value: B,
   },
   /// This token represents the data portion of the IPP message, as described by
-  /// Section 3.10 of the RFC. Currently, it's only ever emitted by
-  /// [`DecodeIterator`](crate::DecodeIterator), as the
-  /// [`Decoder`](crate::Decoder) will emit a [`Step::Body`](crate::Step) to
-  /// indicate that the data body has been reached, instead of emitting a `Data`
-  /// token.
+  /// Section 3.10 of the RFC.
   Data {
     /// The data portion of the IPP message.
     data: B,

@@ -45,7 +45,7 @@ pub enum DecodeErrorKind {
   OffsetOverflow,
 }
 
-/// An error encountered in encoding [`DecodedToken`](crate::DecodedToken)s.
+/// An error encountered in encoding [`Token`](crate::Token)s.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EncodeError {
   /// The length of the name was too large to fit in a `u16`.
