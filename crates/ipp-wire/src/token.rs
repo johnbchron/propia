@@ -272,15 +272,6 @@ impl<B> Token<B> {
 /// A [`Token`] backed by a byte slice for variable-length fields.
 pub type TokenRef<'a> = Token<&'a [u8]>;
 
-/// A [`Token`] type without any backing data for variable-length fields.
-pub type TokenIdx = Token<()>;
-
-impl TokenRef<'_> {
-  /// Converts a [`TokenRef`] to a [`TokenIdx`].
-  #[must_use]
-  pub fn detach(self) -> TokenIdx { self.map_generic(|_| ()) }
-}
-
 /// A delimiter tag. Only in the range `0x00..=0x0F`
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DelimiterTag(pub u8);
