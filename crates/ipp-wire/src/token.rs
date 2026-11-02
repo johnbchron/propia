@@ -160,15 +160,18 @@ pub type DecodedTokenRef<'a> = DecodedToken<&'a [u8]>;
 /// A [`DecodedToken`] type without any backing data for variable-length fields.
 pub type DecodedTokenIdx = DecodedToken<()>;
 
-impl<'a> DecodedTokenRef<'a> {
+impl DecodedTokenRef<'_> {
   /// Converts a [`DecodedTokenRef`] to a [`DecodedTokenIdx`].
+  #[must_use]
   pub fn detach(self) -> DecodedTokenIdx { self.map_generic(|s| s.map(|_| ())) }
 }
 
 impl DecodedTokenIdx {
   /// Converts a [`DecodedTokenIdx`] to a [`DecodedTokenRef`], given a byte
-  /// buffer, using the contained spans.
-  pub fn attach<'a>(self, buf: &'a [u8]) -> DecodedTokenRef<'a> {
+  /// buffer, using the contained spans. Panics if span ranges exceed the
+  /// buffer.
+  #[must_use]
+  pub fn attach(self, buf: &[u8]) -> DecodedTokenRef<'_> {
     self.map_generic(|s| Spanned {
       value: &buf[s.span.start as usize..s.span.end as usize],
       span:  s.span,
@@ -272,8 +275,9 @@ pub type TokenRef<'a> = Token<&'a [u8]>;
 /// A [`Token`] type without any backing data for variable-length fields.
 pub type TokenIdx = Token<()>;
 
-impl<'a> TokenRef<'a> {
+impl TokenRef<'_> {
   /// Converts a [`TokenRef`] to a [`TokenIdx`].
+  #[must_use]
   pub fn detach(self) -> TokenIdx { self.map_generic(|_| ()) }
 }
 
@@ -300,7 +304,7 @@ pub enum ValueTag {
   Standard(u8),
   /// A value type defined by an extension. It's a `0x7F` with the real type in
   /// the first 4 value bytes. When decoded, these first 4 bytes are removed
-  /// from the DecodedToken::Value.value` field, and added back in encoding.
+  /// from the `DecodedToken::Value.value` field, and added back in encoding.
   Extension {
     /// The 4-byte extension type.
     kind: u32,
