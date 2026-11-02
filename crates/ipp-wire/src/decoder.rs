@@ -99,6 +99,7 @@ impl Decoder {
 
   /// Runs the decoder on a chunk of data. See the docs on [`Decoder`] for
   /// instructions.
+  #[allow(clippy::missing_errors_doc)]
   pub fn decode<'a>(
     &mut self,
     buf: &'a [u8],

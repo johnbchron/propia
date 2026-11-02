@@ -4,6 +4,7 @@ use crate::{DelimiterTag, EncodeError, Token, ValueTag};
 ///
 /// Bytes are appended to the `Vec` without clearing it. A failed encode leaves
 /// partial bytes, but any structurally valid token will be encoded.
+#[allow(clippy::missing_errors_doc)]
 pub fn encode_token<B: AsRef<[u8]>>(
   token: &Token<B>,
   out: &mut Vec<u8>,
