@@ -52,6 +52,7 @@ impl<'a> Cursor<'a> {
   pub fn pos(&self) -> u32 { self.pos }
 
   /// The bytes remaining in the buffer.
+  #[allow(clippy::missing_panics_doc)]
   #[must_use]
   pub fn remaining(&self) -> u32 {
     u32::try_from(self.buf.len())
@@ -83,21 +84,27 @@ impl<'a> Cursor<'a> {
   }
 
   /// Reads a `u16` from the buffer and advances the cursor.
+  #[allow(clippy::missing_panics_doc)]
   #[must_use]
   pub fn u16(&mut self) -> Option<Spanned<u16>> {
     let (b, span) = self.take(2)?;
     Some(Spanned {
-      value: u16::from_be_bytes(b.try_into().unwrap()),
+      value: u16::from_be_bytes(
+        b.try_into().expect("slice is known to be 2 bytes long"),
+      ),
       span,
     })
   }
 
   /// Reads a `u32` from the buffer and advances the cursor.
+  #[allow(clippy::missing_panics_doc)]
   #[must_use]
   pub fn u32(&mut self) -> Option<Spanned<u32>> {
     let (b, span) = self.take(4)?;
     Some(Spanned {
-      value: u32::from_be_bytes(b.try_into().unwrap()),
+      value: u32::from_be_bytes(
+        b.try_into().expect("slice is known to be 4 bytes long"),
+      ),
       span,
     })
   }
