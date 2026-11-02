@@ -93,9 +93,9 @@ impl<B> DecodedToken<B> {
   }
 
   /// Maps the backing variable-length type to a different type.
-  pub fn map_generic<U, F>(self, f: F) -> DecodedToken<U>
+  pub fn map_generic<U, F>(self, mut f: F) -> DecodedToken<U>
   where
-    F: Copy + Fn(Spanned<B>) -> Spanned<U>,
+    F: FnMut(Spanned<B>) -> Spanned<U>,
   {
     match self {
       DecodedToken::Header {
@@ -120,7 +120,7 @@ impl<B> DecodedToken<B> {
         span,
         tag,
         extension_type_span,
-        name: name.map(f),
+        name: name.map(&mut f),
         value: f(value),
       },
       DecodedToken::Data { data } => DecodedToken::Data { data: f(data) },
@@ -244,9 +244,9 @@ pub enum Token<B> {
 
 impl<B> Token<B> {
   /// Maps the backing variable-length type to a different type.
-  pub fn map_generic<U, F>(self, f: F) -> Token<U>
+  pub fn map_generic<U, F>(self, mut f: F) -> Token<U>
   where
-    F: Copy + Fn(B) -> U,
+    F: FnMut(B) -> U,
   {
     match self {
       Token::Header {
@@ -261,7 +261,7 @@ impl<B> Token<B> {
       Token::Delimiter { tag } => Token::Delimiter { tag },
       Token::Value { tag, name, value } => Token::Value {
         tag,
-        name: name.map(f),
+        name: name.map(&mut f),
         value: f(value),
       },
       Token::Data { data } => Token::Data { data: f(data) },
