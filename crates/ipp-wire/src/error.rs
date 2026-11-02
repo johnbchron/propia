@@ -1,5 +1,7 @@
 use std::{error::Error, fmt};
 
+use crate::ValueTag;
+
 /// An error encountered in decoding [`DecodedToken`](crate::DecodedToken)s.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecodeError {
@@ -28,9 +30,9 @@ impl fmt::Display for DecodeError {
 pub enum DecodeErrorKind {
   /// The document ended mid-token.
   Truncated {
-    /// The bytes needed to yield the token.
+    /// The size of the field being read when the buffer ran out.
     needed:    u32,
-    /// The bytes actually available.
+    /// The bytes available after the cursor.
     available: u32,
   },
   /// The `end-of-attributes-tag` was never found.
@@ -38,10 +40,11 @@ pub enum DecodeErrorKind {
   /// A value tag indicated an extension type, but the value bytes were not long
   /// enough for the extension type bytes.
   InvalidExtensionLength {
-    /// The length of the value bytes.
+    /// The declared length of the value field.
     value_len: u32,
   },
-  /// The message attribute data exceeded 4 GiB.
+  /// The total size of buffers passed exceeded 4 GiB before message attribute
+  /// data concluded.
   OffsetOverflow,
 }
 
@@ -58,6 +61,11 @@ pub enum EncodeError {
     /// The length of the value.
     length: usize,
   },
+  /// The value tag is invalid.
+  InvalidValueTag {
+    /// The invalid value tag.
+    tag: ValueTag,
+  },
 }
 
 impl Error for EncodeError {}
@@ -73,6 +81,9 @@ impl fmt::Display for EncodeError {
           f,
           "encoding error: attribute value too long: len = {length}"
         )
+      }
+      EncodeError::InvalidValueTag { tag } => {
+        write!(f, "the value tag is invalid: {tag:?}")
       }
     }
   }

@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-/// Absolute byte range (half-open) into the original input buffer.
+/// Absolute byte range (half-open) into the document, across every buffer.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span {
   /// The starting offset of the range.
@@ -10,7 +10,7 @@ pub struct Span {
 }
 
 impl Span {
-  /// Creates a new [`Span`].
+  /// Creates a new [`Span`]. `end` must be greater than or equal to `start`.
   #[must_use]
   pub fn new(start: u32, end: u32) -> Self {
     debug_assert!(start <= end, "inverted span {start}..{end}");

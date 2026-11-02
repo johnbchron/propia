@@ -8,7 +8,7 @@ use crate::{
 /// The output of a run of [`Decoder::decode`].
 pub enum Step<'a> {
   /// Processing on the given buffer yielded a complete
-  /// [`DecodedToken`](crate::DecodedToken). For the next call, slice out the
+  /// [`DecodedToken`](crate::DecodedToken). For the next call, drop the
   /// first `consumed` bytes.
   Token {
     /// The yielded [`DecodedToken`](crate::DecodedToken).
@@ -22,11 +22,14 @@ pub enum Step<'a> {
   /// min_len`.
   NeedMore {
     /// At least this many bytes (total) are needed in the buffer before a
-    /// [`DecodedToken`](crate::DecodedToken) can be yielded.
+    /// [`DecodedToken`](crate::DecodedToken) can be yielded, measured from the
+    /// beginning of the current buffer. This also is a lower bound, so it may
+    /// be returned again after the same buffer is submitted with more data.
     min_len: u32,
   },
-  /// The attribute section is over; document data starts at `buf[0]`. The
-  /// absolute (across buffers) offset of the data block is can be found via
+  /// The attribute section is over; document data starts at `buf[0]` (for the
+  /// first call that returns `Body`; subsequent calls ignore their buffer). The
+  /// absolute (across buffers) offset of the data block can be found via
   /// [`Decoder::offset`]. Returned on every call from here on.
   Body,
   /// A previous call returned an error.
@@ -40,7 +43,7 @@ pub enum Step<'a> {
 /// you have. Set `eof` if you know that no more data is coming. If it doesn't
 /// error, it will give back a [`Step`]. There are 4 possible output states
 /// encoded in [`Step`]:
-/// - [`Step::Token`](crate::Token): Enough data to decode a
+/// - [`Step::Token`]: Enough data to decode a
 ///   [`DecodedToken`](crate::DecodedToken) was present, and a single
 ///   [`DecodedToken`](crate::DecodedToken) was yielded. `consumed` is the
 ///   number of bytes that token covered, so call [`decode`](Decoder::decode)
@@ -49,14 +52,19 @@ pub enum Step<'a> {
 ///   [`DecodedToken`](crate::DecodedToken) was present, so acquire more data
 ///   and call [`decode`](Decoder::decode) again when at least `min_len` bytes
 ///   are present in the buffer. If you reach the end of your input, set `eof`.
-/// - [`Step::Body`]: Every last token has been yielded from the attribute data
-///   of the IPP message, and the rest of the input (`buf[..]`) is body data. If
+/// - [`Step::Body`]: Every token has been yielded from the attribute data of
+///   the IPP message, and the rest of the input (`buf[..]`) is body data. If
 ///   you need the offset since the start of decoding, that's available via
 ///   [`Decoder::offset`]. This state is fused, meaning that every subsequent
 ///   call to [`decode`](Decoder::decode) will also return [`Step::Body`].
 /// - [`Step::Errored`]: A previous call to [`decode`](Decoder::decode) yielded
 ///   an error. This state is fused, meaning that every subsequent call to
 ///   [`decode`](Decoder::decode) will also return [`Step::Errored`].
+///
+/// When the `eof` flag is set, situations that would have returned
+/// [`Step::NeedMore`] now return an error: [`DecodeErrorKind::Truncated`]
+/// within a token or for a 0-length message, or [`NoEndOfAttributes`] at a
+/// token boundary.
 pub struct Decoder {
   state:  State,
   offset: u32,
@@ -84,9 +92,9 @@ impl Decoder {
     }
   }
 
-  #[must_use]
   /// Returns the absolute offset the decoder is at, i.e. the total number of
   /// bytes it has reported `consumed`.
+  #[must_use]
   pub fn offset(&self) -> u32 { self.offset }
 
   /// Runs the decoder on a chunk of data. See the docs on [`Decoder`] for
@@ -106,7 +114,8 @@ impl Decoder {
       self.state = State::Failed;
       DecodeError {
         offset:  self.offset,
-        message: "buffer exceeds 4 GiB",
+        message: "total size of buffers passed exceeded 4 GiB before message \
+                  attribute data concluded.",
         kind:    DecodeErrorKind::OffsetOverflow,
       }
     })?;

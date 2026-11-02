@@ -7,6 +7,10 @@ use crate::span::Spanned;
 /// This is used to walk along a buffer and read out data with its containing
 /// spans when decoding [`DecodedToken`](crate::DecodedToken)s. Integers are
 /// read big-endian, because that's how IPP messages work.
+///
+/// `Cursor` is the primary observer of message data in [`Decoder`], but it can
+/// also be used further up the stack to re-read over message data and collect
+/// spans into attribute values.
 pub struct Cursor<'a> {
   buf:  &'a [u8],
   /// the byte offset of the start of this buffer
@@ -30,7 +34,7 @@ impl<'a> Cursor<'a> {
   /// document, to be added to [`Span`]s.
   ///
   /// [`Span`] uses `u32` internally, so this returns `None` if `base +
-  /// buf.len() > U32::MAX`.
+  /// buf.len() > u32::MAX`.
   #[must_use]
   pub fn new(buf: &'a [u8], base: u32) -> Option<Self> {
     if u64::from(base) + buf.len() as u64 > u64::from(u32::MAX) {
@@ -98,7 +102,7 @@ impl<'a> Cursor<'a> {
     })
   }
 
-  /// Creates a `CursorMark` (fencepost) at the current offset.
+  /// Creates a [`CursorMark`] (fencepost) at the current offset.
   #[must_use]
   pub fn mark(&self) -> CursorMark { CursorMark(self.offset()) }
 

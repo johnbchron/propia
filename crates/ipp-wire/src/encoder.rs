@@ -1,6 +1,9 @@
 use crate::{DelimiterTag, EncodeError, Token, ValueTag};
 
 /// Encodes a [`Token`] as bytes into a mutable `Vec<u8>`.
+///
+/// Bytes are appended to the `Vec` without clearing it. A failed encode leaves
+/// partial bytes, but any structurally valid token will be encoded.
 pub fn encode_token<B: AsRef<[u8]>>(
   token: &Token<B>,
   out: &mut Vec<u8>,
@@ -58,6 +61,11 @@ fn encode_value<B: AsRef<[u8]>>(
   value: &B,
   out: &mut Vec<u8>,
 ) -> Result<(), EncodeError> {
+  // this should be a ValueTag::Extension, but we don't have the extension type
+  if let ValueTag::Standard(0x7F) = tag {
+    return Err(EncodeError::InvalidValueTag { tag: *tag });
+  }
+
   let name_len = name.map(|s| s.as_ref().len()).unwrap_or(0);
   let name_len = u16::try_from(name_len)
     .map_err(|_| EncodeError::NameTooLong { length: name_len })?

@@ -27,7 +27,8 @@ pub enum DecodedToken<B> {
   Header {
     /// The outer span, containing the whole header.
     span:                Span,
-    /// The `version-number`, as described in Section 3.1.1 of the RFC.
+    /// The `version-number`, as described in Section 3.1.1 of the RFC. Version
+    /// is `(major, minor)`.
     version:             (Spanned<u8>, Spanned<u8>),
     /// The `operation-id` or `status-code`, as described in Section 3.1.1 of
     /// the RFC.
@@ -60,7 +61,10 @@ pub enum DecodedToken<B> {
     /// the RFC.
     name:                Option<Spanned<B>>,
     /// The value field of the attribute value, as described by Section 3.9 of
-    /// the RFC.
+    /// the RFC. If the value tag is a `0x7F`, the first 4 bytes that come in
+    /// over the wire for this field are the extension type, and they're
+    /// excluded from this field during decoding. They're added back during
+    /// encoding.
     value:               Spanned<B>,
   },
   /// This token represents the data portion of the IPP message, as described by
@@ -191,7 +195,8 @@ pub enum Token<B> {
   /// The header token, containing the fields always found at the beginning of
   /// the message.
   Header {
-    /// The `version-number`, as described in Section 3.1.1 of the RFC.
+    /// The `version-number`, as described in Section 3.1.1 of the RFC. Version
+    /// is `(major, minor)`.
     version:             (u8, u8),
     /// The `operation-id` or `status-code`, as described in Section 3.1.1 of
     /// the RFC.
@@ -210,7 +215,7 @@ pub enum Token<B> {
   /// Specifically, either an `attribute-with-one-value` field or an
   /// `additional-value` field. If the `name` field of this variant is
   /// `Some(...)`, it's an `attribute-with-one-value`, and if not, it's a
-  /// `additional-value`.
+  /// `additional-value`. `Some(b"")` will encode the same as `None`.
   Value {
     /// The value tag delimiting this attribute value, as described by Sections
     /// 3.1.4, 3.1.5, and 3.5.2 of the RFC.
@@ -219,7 +224,10 @@ pub enum Token<B> {
     /// the RFC.
     name:  Option<B>,
     /// The value field of the attribute value, as described by Section 3.9 of
-    /// the RFC.
+    /// the RFC. If the value tag is a `0x7F`, the first 4 bytes that come in
+    /// over the wire for this field are the extension type, and they're
+    /// excluded from this field during decoding. They're added back during
+    /// encoding.
     value: B,
   },
   /// This token represents the data portion of the IPP message, as described by
@@ -282,14 +290,16 @@ impl DelimiterTag {
   // there are others defined in other specs; this is just RFC 8010
 }
 
-/// A tag that delimits the start of a [`DecodedToken::Value`].
+/// A tag that delimits the start of a [`DecodedToken::Value`] or
+/// [`Token::Value`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ValueTag {
   /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`. Not
-  /// all values in that range are valid,
+  /// all values in that range are valid.
   Standard(u8),
   /// A value type defined by an extension. It's a `0x7F` with the real type in
-  /// the first 4 value bytes.
+  /// the first 4 value bytes. When decoded, these first 4 bytes are removed
+  /// from the DecodedToken::Value.value` field, and added back in encoding.
   Extension {
     /// The 4-byte extension type.
     kind: u32,

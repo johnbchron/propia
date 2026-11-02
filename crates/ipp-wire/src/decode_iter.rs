@@ -16,7 +16,11 @@ pub struct DecodeIterator<'a> {
 }
 
 impl<'a> DecodeIterator<'a> {
-  /// Creates a new [`DecodeIterator`].
+  /// Creates a new [`DecodeIterator`]. Returns `None` for inputs over
+  /// `u32::MAX`.
+  ///
+  /// Unlike [`Decoder`], when iteration ends successfully it will yield a
+  /// [`DecodedToken::Data`], which may be empty.
   #[must_use]
   pub fn new(input: &'a [u8]) -> Option<Self> {
     if input.len() > u32::MAX as usize {
