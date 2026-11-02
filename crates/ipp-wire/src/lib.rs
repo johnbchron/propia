@@ -18,8 +18,8 @@
 //! message data is available as a slice.
 //!
 //! ## Encoding
-//! Currently the only encoding interface is [`encode_token`], which writes a
-//! single [`Token`] as bytes to a mutable [`Vec`].
+//! Encode [`Token`]s with [`encode_token`]/[`encoded_len`], which is also
+//! sans-IO. [`encode_token_to_vec`] is provided as a convenience.
 //!
 //! [1]: https://www.rfc-editor.org/info/rfc8010/
 

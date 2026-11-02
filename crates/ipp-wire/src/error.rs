@@ -66,6 +66,13 @@ pub enum EncodeError {
     /// The invalid value tag.
     tag: ValueTag,
   },
+  /// The given slice is too small to encode the token.
+  BufferTooSmall {
+    /// The length needed to encode the whole token.
+    needed:    usize,
+    /// The length available in the mutable slice.
+    available: usize,
+  },
 }
 
 impl Error for EncodeError {}
@@ -74,16 +81,20 @@ impl fmt::Display for EncodeError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       EncodeError::NameTooLong { length } => {
-        write!(f, "encoding error: attribute name too long: len = {length}")
+        write!(f, "invalid token: attribute name too long: len = {length}")
       }
       EncodeError::ValueTooLong { length } => {
-        write!(
-          f,
-          "encoding error: attribute value too long: len = {length}"
-        )
+        write!(f, "invalid token: attribute value too long: len = {length}")
       }
       EncodeError::InvalidValueTag { tag } => {
-        write!(f, "the value tag is invalid: {tag:?}")
+        write!(f, "invalid token: the value tag is invalid: {tag:?}")
+      }
+      EncodeError::BufferTooSmall { needed, available } => {
+        write!(
+          f,
+          "buffer too small to encode token: needed {needed}, found \
+           {available}"
+        )
       }
     }
   }
