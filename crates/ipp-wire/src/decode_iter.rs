@@ -20,7 +20,7 @@ impl<'a> DecodeIterator<'a> {
   /// `u32::MAX`.
   ///
   /// Unlike [`Decoder`], when iteration ends successfully it will yield a
-  /// [`DecodedToken::Data`], which may be empty.
+  /// [`DecodedTokenRef::Data`], which may be empty.
   #[must_use]
   pub fn new(input: &'a [u8]) -> Option<Self> {
     if input.len() > u32::MAX as usize {

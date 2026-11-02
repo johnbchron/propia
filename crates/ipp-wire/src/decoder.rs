@@ -63,8 +63,8 @@ pub enum Step<'a> {
 ///
 /// When the `eof` flag is set, situations that would have returned
 /// [`Step::NeedMore`] now return an error: [`DecodeErrorKind::Truncated`]
-/// within a token or for a 0-length message, or [`NoEndOfAttributes`] at a
-/// token boundary.
+/// within a token or for a 0-length message, or
+/// [`DecodeErrorKind::NoEndOfAttributes`] at a token boundary.
 pub struct Decoder {
   state:  State,
   offset: u32,

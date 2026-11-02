@@ -8,9 +8,9 @@ use crate::span::Spanned;
 /// spans when decoding [`DecodedToken`](crate::DecodedToken)s. Integers are
 /// read big-endian, because that's how IPP messages work.
 ///
-/// `Cursor` is the primary observer of message data in [`Decoder`], but it can
-/// also be used further up the stack to re-read over message data and collect
-/// spans into attribute values.
+/// `Cursor` is the primary observer of message data in
+/// [`Decoder`](crate::Decoder), but it can also be used further up the stack to
+/// re-read over message data and collect spans into attribute values.
 pub struct Cursor<'a> {
   buf:  &'a [u8],
   /// the byte offset of the start of this buffer
