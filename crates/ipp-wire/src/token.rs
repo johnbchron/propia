@@ -49,16 +49,19 @@ pub enum DecodedToken<B> {
   /// `additional-value`.
   Value {
     /// The outer span, containing the whole attribute value.
-    span:  Span,
+    span:                Span,
     /// The value tag delimiting this attribute value, as described by Sections
     /// 3.1.4, 3.1.5, and 3.5.2 of the RFC.
-    tag:   Spanned<ValueTag>,
+    tag:                 Spanned<ValueTag>,
+    /// If the value tag is `0x7F`, indicating that the type is an extension
+    /// type found in the first 4 bytes of the value, this is that span.
+    extension_type_span: Option<Span>,
     /// The name field of the attribute value, as described by Section 3.7 of
     /// the RFC.
-    name:  Option<Spanned<B>>,
+    name:                Option<Spanned<B>>,
     /// The value field of the attribute value, as described by Section 3.9 of
     /// the RFC.
-    value: Spanned<B>,
+    value:               Spanned<B>,
   },
   /// This token represents the data portion of the IPP message, as described by
   /// Section 3.10 of the RFC. Currently, it's only ever emitted by
@@ -106,11 +109,13 @@ impl<B> DecodedToken<B> {
       DecodedToken::Value {
         span,
         tag,
+        extension_type_span,
         name,
         value,
       } => DecodedToken::Value {
         span,
         tag,
+        extension_type_span,
         name: name.map(f),
         value: f(value),
       },
@@ -287,7 +292,7 @@ pub enum ValueTag {
   /// the first 4 value bytes.
   Extension {
     /// The 4-byte extension type.
-    kind: Spanned<u32>,
+    kind: u32,
   },
 }
 

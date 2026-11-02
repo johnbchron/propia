@@ -98,7 +98,7 @@ fn encode_value<B: AsRef<[u8]>>(
           length: value_bytes.len() + 4,
         })?
         .to_be_bytes();
-      let extension_type_bytes = kind.value.to_be_bytes();
+      let extension_type_bytes = kind.to_be_bytes();
 
       // reserve space for value length, extension type, and value bytes
       out.reserve(2 + 4 + value_bytes.len());

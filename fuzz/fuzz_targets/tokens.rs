@@ -1,6 +1,6 @@
 #![no_main]
 
-use ipp_wire::{Span, Spanned, DecodeIterator, DecodedTokenRef, ValueTag};
+use ipp_wire::{DecodeIterator, DecodedTokenRef, Span, Spanned, ValueTag};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
@@ -37,6 +37,7 @@ fn check_token(data: &[u8], token: &DecodedTokenRef) {
     DecodedTokenRef::Value {
       span,
       tag,
+      extension_type_span,
       name,
       value,
     } => {
@@ -45,8 +46,11 @@ fn check_token(data: &[u8], token: &DecodedTokenRef) {
       if let Some(name) = name {
         check_bytes(data, span, name);
       }
-      if let ValueTag::Extension { kind } = tag.value {
-        assert_eq!(kind.span.len(), 4);
+      assert_eq!(tag.span.len(), 1);
+      if let ValueTag::Extension { kind: _ } = tag.value
+        && let Some(extension_type_span) = extension_type_span
+      {
+        assert_eq!(extension_type_span.len(), 4);
       }
       check_bytes(data, span, value);
     }

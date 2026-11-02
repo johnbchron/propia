@@ -1,6 +1,6 @@
 use super::{Stall, invalid, need};
 use crate::{
-  DecodeError, DecodeErrorKind, DelimiterTag, Span, Spanned, DecodedTokenRef,
+  DecodeError, DecodeErrorKind, DecodedTokenRef, DelimiterTag, Span, Spanned,
   ValueTag, cursor::Cursor,
 };
 
@@ -96,7 +96,7 @@ pub(super) fn decode_attribute<'a>(
     .value;
 
   // if it's an extension value type, extract the value type first
-  let tag = match tag.value {
+  let (tag, extension_type_span) = match tag.value {
     ValueTag::EXTENSION_TYPE_MAGIC_BYTE => {
       // value type is first 4 bytes of value
       value_len = value_len.checked_sub(4).ok_or_else(|| {
@@ -111,9 +111,12 @@ pub(super) fn decode_attribute<'a>(
       let kind = cur.u32().ok_or_else(|| {
         need(cur, 4, "truncated before value tag extension type")
       })?;
-      tag.map(|_| ValueTag::Extension { kind })
+      (
+        tag.map(|_| ValueTag::Extension { kind: kind.value }),
+        Some(kind.span),
+      )
     }
-    _ => tag.map(ValueTag::Standard),
+    _ => (tag.map(ValueTag::Standard), None),
   };
 
   // extract the value itself
@@ -136,6 +139,7 @@ pub(super) fn decode_attribute<'a>(
   Ok(DecodedTokenRef::Value {
     span,
     tag,
+    extension_type_span,
     name,
     value,
   })
