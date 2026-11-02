@@ -15,11 +15,17 @@ pub fn encode_token<B: AsRef<[u8]>>(
       operation_or_status,
       request_id,
       ..
-    } => encode_header(version, operation_or_status, request_id, out),
-    Token::Delimiter { tag } => encode_delimiter(tag, out),
+    } => {
+      encode_header(*version, *operation_or_status, *request_id, out);
+      Ok(())
+    }
+    Token::Delimiter { tag } => {
+      encode_delimiter(*tag, out);
+      Ok(())
+    }
     Token::Value {
       tag, name, value, ..
-    } => encode_value(tag, name.as_ref(), value, out),
+    } => encode_value(*tag, name.as_ref(), value, out),
     Token::Data { data } => {
       out.extend_from_slice(data.as_ref());
       Ok(())
@@ -28,11 +34,11 @@ pub fn encode_token<B: AsRef<[u8]>>(
 }
 
 fn encode_header(
-  version: &(u8, u8),
-  operation_or_status: &u16,
-  request_id: &u32,
+  version: (u8, u8),
+  operation_or_status: u16,
+  request_id: u32,
   out: &mut Vec<u8>,
-) -> Result<(), EncodeError> {
+) {
   let op = operation_or_status.to_be_bytes();
   let r_id = request_id.to_be_bytes();
 
@@ -43,43 +49,34 @@ fn encode_header(
   out.reserve(yielded_slice.len());
 
   out.extend_from_slice(&yielded_slice);
-
-  Ok(())
 }
 
-fn encode_delimiter(
-  tag: &DelimiterTag,
-  out: &mut Vec<u8>,
-) -> Result<(), EncodeError> {
-  out.push(tag.0);
-
-  Ok(())
-}
+fn encode_delimiter(tag: DelimiterTag, out: &mut Vec<u8>) { out.push(tag.0); }
 
 fn encode_value<B: AsRef<[u8]>>(
-  tag: &ValueTag,
+  tag: ValueTag,
   name: Option<&B>,
   value: &B,
   out: &mut Vec<u8>,
 ) -> Result<(), EncodeError> {
   // this should be a ValueTag::Extension, but we don't have the extension type
   if let ValueTag::Standard(0x7F) = tag {
-    return Err(EncodeError::InvalidValueTag { tag: *tag });
+    return Err(EncodeError::InvalidValueTag { tag });
   }
 
-  let name_len = name.map(|s| s.as_ref().len()).unwrap_or(0);
+  let name_len = name.map_or(0, |s| s.as_ref().len());
   let name_len = u16::try_from(name_len)
     .map_err(|_| EncodeError::NameTooLong { length: name_len })?
     .to_be_bytes();
 
   let tag_byte = match tag {
-    ValueTag::Standard(b) => *b,
+    ValueTag::Standard(b) => b,
     ValueTag::Extension { .. } => ValueTag::EXTENSION_TYPE_MAGIC_BYTE,
   };
 
   // tag and name len
   let initial = [tag_byte, name_len[0], name_len[1]];
-  let name_slice = name.map(|s| s.as_ref()).unwrap_or_default();
+  let name_slice = name.map_or_default(AsRef::as_ref);
 
   // reserve tag, name_len, and name together to conserve allocations
   out.reserve(initial.len() + name_slice.len());
