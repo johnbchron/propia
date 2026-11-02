@@ -191,6 +191,7 @@ impl DecodedTokenIdx {
 /// are generic on their representation. The generic used for variable-length
 /// fields can be converted to some other type with
 /// [`map_generic`](Token::map_generic).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Token<B> {
   /// The header token, containing the fields always found at the beginning of
   /// the message.
