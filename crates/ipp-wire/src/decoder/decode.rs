@@ -80,13 +80,9 @@ pub(super) fn decode_attribute<'a>(
     cur.take(u32::from(name_len)).ok_or_else(|| {
       need(cur, u32::from(name_len), "truncated before attribute name")
     })?;
-  let name = if name_bytes.is_empty() {
-    None
-  } else {
-    Some(Spanned {
-      value: name_bytes,
-      span:  name_span,
-    })
+  let name = Spanned {
+    value: name_bytes,
+    span:  name_span,
   };
 
   // get the length of the value

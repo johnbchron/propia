@@ -43,9 +43,7 @@ fn check_token(data: &[u8], token: &DecodedTokenRef) {
     } => {
       assert_eq!(tag.span.start, span.start);
       assert_eq!(value.span.end, span.end);
-      if let Some(name) = name {
-        check_bytes(data, span, name);
-      }
+      check_bytes(data, span, name);
       assert_eq!(tag.span.len(), 1);
       if let ValueTag::Extension { kind: _ } = tag.value
         && let Some(extension_type_span) = extension_type_span

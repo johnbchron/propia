@@ -23,7 +23,7 @@ pub fn encoded_len<B: AsRef<[u8]>>(token: &Token<B>) -> usize {
     Token::Header { .. } => 8,
     Token::Delimiter { .. } => 1,
     Token::Value { tag, name, value } => {
-      let name_len = name.as_ref().map_or(0, |b| b.as_ref().len());
+      let name_len = name.as_ref().len();
       let is_extended_type = matches!(tag, ValueTag::Extension { .. });
       let extended_type_len = if is_extended_type { 4 } else { 0 };
       1 + 2 + name_len + 2 + extended_type_len + value.as_ref().len()
@@ -71,7 +71,7 @@ pub fn encode_token<B: AsRef<[u8]>>(
     Token::Value {
       tag, name, value, ..
     } => {
-      encode_value(*tag, name.as_ref(), value, out)?;
+      encode_value(*tag, name, value, out)?;
     }
     Token::Data { data } => {
       put(&mut out, data.as_ref());
@@ -103,7 +103,7 @@ fn encode_delimiter(tag: DelimiterTag, mut out: &mut [u8]) {
 
 fn encode_value<B: AsRef<[u8]>>(
   tag: ValueTag,
-  name: Option<&B>,
+  name: &B,
   value: &B,
   mut out: &mut [u8],
 ) -> Result<(), EncodeError> {
@@ -113,7 +113,7 @@ fn encode_value<B: AsRef<[u8]>>(
   }
 
   // calculate name length and value length, exiting early if needed
-  let name_len = name.map_or(0, |s| s.as_ref().len());
+  let name_len = name.as_ref().len();
   let name_len = u16::try_from(name_len)
     .map_err(|_| EncodeError::NameTooLong { length: name_len })?
     .to_be_bytes();
@@ -137,8 +137,7 @@ fn encode_value<B: AsRef<[u8]>>(
   put(&mut out, &initial);
 
   // name
-  let name_slice = name.map_or_default(AsRef::as_ref);
-  put(&mut out, name_slice);
+  put(&mut out, name.as_ref());
 
   // value len
   put(&mut out, &value_len);

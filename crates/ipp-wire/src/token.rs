@@ -46,7 +46,7 @@ pub enum DecodedToken<B> {
   ///
   /// Specifically, either an `attribute-with-one-value` field or an
   /// `additional-value` field. If the `name` field of this variant is
-  /// `Some(...)`, it's an `attribute-with-one-value`, and if not, it's a
+  /// zero-length, it's an `attribute-with-one-value`, and if not, it's a
   /// `additional-value`.
   Value {
     /// The outer span, containing the whole attribute value.
@@ -59,7 +59,7 @@ pub enum DecodedToken<B> {
     extension_type_span: Option<Span>,
     /// The name field of the attribute value, as described by Section 3.7 of
     /// the RFC.
-    name:                Option<Spanned<B>>,
+    name:                Spanned<B>,
     /// The value field of the attribute value, as described by Section 3.9 of
     /// the RFC. If the value tag is a `0x7F`, the first 4 bytes that come in
     /// over the wire for this field are the extension type, and they're
@@ -120,7 +120,7 @@ impl<B> DecodedToken<B> {
         span,
         tag,
         extension_type_span,
-        name: name.map(&mut f),
+        name: f(name),
         value: f(value),
       },
       DecodedToken::Data { data } => DecodedToken::Data { data: f(data) },
@@ -146,7 +146,7 @@ impl<B> DecodedToken<B> {
         tag, name, value, ..
       } => Token::Value {
         tag:   tag.value,
-        name:  name.map(|n| n.value),
+        name:  name.value,
         value: value.value,
       },
       DecodedToken::Data { data } => Token::Data { data: data.value },
@@ -226,7 +226,7 @@ pub enum Token<B> {
     tag:   ValueTag,
     /// The name field of the attribute value, as described by Section 3.7 of
     /// the RFC.
-    name:  Option<B>,
+    name:  B,
     /// The value field of the attribute value, as described by Section 3.9 of
     /// the RFC. If the value tag is a `0x7F`, the first 4 bytes that come in
     /// over the wire for this field are the extension type, and they're
@@ -261,7 +261,7 @@ impl<B> Token<B> {
       Token::Delimiter { tag } => Token::Delimiter { tag },
       Token::Value { tag, name, value } => Token::Value {
         tag,
-        name: name.map(&mut f),
+        name: f(name),
         value: f(value),
       },
       Token::Data { data } => Token::Data { data: f(data) },
