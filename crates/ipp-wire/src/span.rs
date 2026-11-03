@@ -1,12 +1,22 @@
-use std::ops::Range;
+use std::{fmt, ops::Range};
 
 /// Absolute byte range (half-open) into the document, across every buffer.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span {
   /// The starting offset of the range.
   pub start: u32,
   /// The ending offset of the range.
   pub end:   u32,
+}
+
+impl fmt::Debug for Span {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_tuple("Span")
+      .field_with(|fmt| {
+        write!(fmt, "[{start}..{end}]", start = self.start, end = self.end)
+      })
+      .finish()
+  }
 }
 
 impl Span {
@@ -31,7 +41,7 @@ impl Span {
 }
 
 /// A value with its originating span.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Spanned<T> {
   /// The value itself.
   pub value: T,
@@ -39,6 +49,14 @@ pub struct Spanned<T> {
   pub span:  Span,
 }
 
+impl<T: fmt::Debug> fmt::Debug for Spanned<T> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_tuple("Spanned")
+      .field(&self.value)
+      .field(&self.span)
+      .finish()
+  }
+}
 impl<T> Spanned<T> {
   /// Maps the spanned value from one type to another.
   #[must_use]
