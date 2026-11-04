@@ -46,8 +46,8 @@ pub enum DecodedToken<B> {
   ///
   /// Specifically, either an `attribute-with-one-value` field or an
   /// `additional-value` field. If the `name` field of this variant is
-  /// zero-length, it's an `attribute-with-one-value`, and if not, it's a
-  /// `additional-value`.
+  /// zero-length, it's an `additional-value`, and if not, it's a
+  /// `attribute-with-one-value`.
   Value {
     /// The outer span, containing the whole attribute value.
     span:                Span,
@@ -218,8 +218,8 @@ pub enum Token<B> {
   ///
   /// Specifically, either an `attribute-with-one-value` field or an
   /// `additional-value` field. If the `name` field of this variant is
-  /// `Some(...)`, it's an `attribute-with-one-value`, and if not, it's a
-  /// `additional-value`. `Some(b"")` will encode the same as `None`.
+  /// zero-length, it's an `additional-value`, and if not, it's a
+  /// `attribute-with-one-value`.
   Value {
     /// The value tag delimiting this attribute value, as described by Sections
     /// 3.1.4, 3.1.5, and 3.5.2 of the RFC.
