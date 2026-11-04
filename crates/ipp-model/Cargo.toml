@@ -6,3 +6,5 @@ edition = "2024"
 
 [dependencies]
 ipp-wire = { path = "../ipp-wire" }
+
+bytes = { workspace = true }
