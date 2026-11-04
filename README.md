@@ -23,6 +23,10 @@ done, and I also believe Rust is the best language to do it in.
 
 ## Approach
 
+The style of approach I want to take is to the time to build rigorous
+standards-based tooling and toolkits first, and then construct and compose those
+pieces into more widely useful components.
+
 The first big piece I want to build is an IPP proxy and explorer, which will
 allow one to set a proxy destination and pass messages through while showing an
 IPP explorer web interface.
