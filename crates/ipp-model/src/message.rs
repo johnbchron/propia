@@ -1,19 +1,13 @@
+mod view;
+
 use std::{range::Range, sync::Arc};
 
 use ipp_wire::{DecodedToken, DecodedTokenIdx, DelimiterTag, ValueTag};
 
+pub use self::view::*;
 use crate::{Diagnostic, Kind, buffer::Buffer};
 
 pub struct Message(Arc<Inner>);
-
-struct Inner {
-  buffer:      Buffer,
-  tokens:      Box<[DecodedTokenIdx]>,
-  groups:      Box<[GroupRow]>,
-  attrs:       Box<[AttrRow]>,
-  values:      Box<[ValueRow]>,
-  diagnostics: Box<[Diagnostic]>,
-}
 
 impl Message {
   pub(crate) fn build(buffer: Buffer, tokens: Vec<DecodedTokenIdx>) -> Self {
@@ -28,6 +22,15 @@ impl Message {
       diagnostics: builder.diagnostics.into_boxed_slice(),
     }))
   }
+}
+
+struct Inner {
+  buffer:      Buffer,
+  tokens:      Box<[DecodedTokenIdx]>,
+  groups:      Box<[GroupRow]>,
+  attrs:       Box<[AttrRow]>,
+  values:      Box<[ValueRow]>,
+  diagnostics: Box<[Diagnostic]>,
 }
 
 #[derive(Clone, Copy)]
