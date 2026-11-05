@@ -1,3 +1,4 @@
+mod debug;
 mod view;
 
 use std::{range::Range, sync::Arc};

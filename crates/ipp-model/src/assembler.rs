@@ -118,6 +118,7 @@ impl Assembler {
   }
 }
 
+#[derive(Clone, Debug)]
 pub struct Limits {
   /// The maximum number of bytes allowed in a message's attribute data.
   pub max_bytes:  u32,
@@ -125,11 +126,21 @@ pub struct Limits {
   pub max_tokens: u32,
 }
 
+impl Default for Limits {
+  fn default() -> Self {
+    Self {
+      max_bytes:  u32::MAX,
+      max_tokens: u32::MAX,
+    }
+  }
+}
+
 pub enum Progress {
   More(Assembler),
   Done(Assembled),
 }
 
+#[derive(Debug)]
 pub struct Assembled {
   pub message: Message,
   /// All ingested bytes following the last token.
@@ -138,6 +149,7 @@ pub struct Assembled {
   pub end:     EndState,
 }
 
+#[derive(Debug)]
 pub enum EndState {
   /// A `Message` was produced.
   Complete,
