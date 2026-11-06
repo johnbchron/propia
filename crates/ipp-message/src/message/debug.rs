@@ -41,7 +41,7 @@ impl fmt::Debug for Message {
       for diagnostic in diagnostics {
         newline(f, 2)?;
         paint(f, PROBLEM, |f| {
-          write!(f, "token {}: {:?}", diagnostic.token, diagnostic.kind)
+          write!(f, "token {}: {}", diagnostic.token, diagnostic.kind)
         })?;
       }
     }
