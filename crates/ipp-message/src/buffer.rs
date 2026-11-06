@@ -25,6 +25,14 @@ impl Buffer {
     let end = (span.end - segment.offset) as usize;
     &segment.bytes[start..end]
   }
+
+  /// Returns whether the start of a segment falls on a given offset.
+  pub(crate) fn is_segment_start(&self, offset: u32) -> bool {
+    self
+      .segments
+      .binary_search_by_key(&offset, |s| s.offset)
+      .is_ok()
+  }
 }
 
 pub(crate) struct Segment {

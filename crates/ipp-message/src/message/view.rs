@@ -1,4 +1,7 @@
-use ipp_wire::{DecodedToken, DelimiterTag, Span, ValueTag};
+use std::{iter::FusedIterator, slice};
+
+use bytes::{Bytes, BytesMut};
+use ipp_wire::{DecodedToken, DecodedTokenIdx, DelimiterTag, Span, ValueTag};
 
 use super::{AttrIdx, AttrRow, GroupRow, Inner, Message, ValueIdx, ValueRow};
 use crate::Diagnostic;
@@ -38,8 +41,8 @@ impl Message {
     msg.groups.iter().map(move |row| GroupRef { msg, row })
   }
 
-  /// Iterates over the groups with a given tag. A response can hold several,
-  /// such as one job group per job.
+  /// Iterates over the groups with a given tag. A response can hold several
+  /// groups with the same tag, such as one job group per job.
   pub fn groups_tagged(
     &self,
     tag: DelimiterTag,
@@ -50,6 +53,22 @@ impl Message {
   /// Returns the problems found while structuring the message.
   #[must_use]
   pub fn diagnostics(&self) -> &[Diagnostic] { &self.0.diagnostics }
+
+  /// Iterates over the bytes of the message as contiguous slices.
+  pub fn chunks(&self) -> impl Iterator<Item = &[u8]> {
+    let msg = &*self.0;
+    msg
+      .spans(0, msg.tokens.len() as u32)
+      .map(|s| msg.buffer.slice(s))
+  }
+
+  /// Copies the message into one contiguous buffer.
+  #[must_use]
+  pub fn to_bytes(&self) -> Bytes {
+    let mut out = BytesMut::new();
+    self.chunks().for_each(|chunk| out.extend_from_slice(chunk));
+    out.freeze()
+  }
 }
 
 /// An isolated [`DecodedTokenIdx::Value`](ipp_wire::DecodedTokenIdx::Value).
@@ -88,7 +107,52 @@ impl Inner {
       row: &self.values[index.0 as usize],
     }
   }
+
+  /// Iterates over the merged byte spans of a token range.
+  fn spans(&self, start: u32, end: u32) -> Spans<'_> {
+    Spans {
+      msg:     self,
+      tokens:  self.tokens[start as usize..end as usize].iter(),
+      pending: None,
+    }
+  }
 }
+
+/// An iterator over the byte spans of a token range, merging neighbours.
+///
+/// An edited message keeps its tokens in several segments, so a range of tokens
+/// isn't one span of bytes.
+pub struct Spans<'m> {
+  msg:     &'m Inner,
+  tokens:  slice::Iter<'m, DecodedTokenIdx>,
+  pending: Option<Span>,
+}
+
+impl Iterator for Spans<'_> {
+  type Item = Span;
+
+  fn next(&mut self) -> Option<Span> {
+    let mut current = self
+      .pending
+      .take()
+      .or_else(|| self.tokens.next().map(DecodedToken::span))?;
+
+    for token in self.tokens.by_ref() {
+      let span = token.span();
+      let adjacent = span.start == current.end
+        && !self.msg.buffer.is_segment_start(span.start);
+      if !adjacent {
+        self.pending = Some(span);
+        break;
+      }
+      current.end = span.end;
+    }
+
+    Some(current)
+  }
+}
+
+impl FusedIterator for Spans<'_> {}
 
 /// A view of an IPP Attribute Group.
 #[derive(Clone, Copy)]
