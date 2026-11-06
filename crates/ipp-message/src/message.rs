@@ -9,6 +9,7 @@ pub use self::view::*;
 use crate::{Diagnostic, Kind, buffer::Buffer};
 
 /// An IPP message, structurally decoded.
+#[derive(Clone)]
 pub struct Message(Arc<Inner>);
 
 impl Message {
