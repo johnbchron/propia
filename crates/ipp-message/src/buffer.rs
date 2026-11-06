@@ -3,6 +3,7 @@ use std::sync::Arc;
 use bytes::Bytes;
 use ipp_wire::Span;
 
+#[derive(Clone)]
 pub(crate) struct Buffer {
   segments: Arc<[Segment]>,
 }
@@ -11,6 +12,31 @@ impl Buffer {
   pub(crate) fn new(bytes: Bytes) -> Self {
     Self {
       segments: Arc::new([Segment { offset: 0, bytes }]),
+    }
+  }
+
+  /// The first after the last segment.
+  pub(crate) fn end(&self) -> u32 {
+    let last = self.segments.last().expect("a buffer always has a segment");
+    last.offset + last.bytes.len() as u32
+  }
+
+  /// Returns a buffer with `bytes` added at [`end`](Self::end).
+  pub(crate) fn append(&self, bytes: Bytes) -> Self {
+    if bytes.is_empty() {
+      return self.clone();
+    }
+    let offset = self.end();
+    let tail = Segment { offset, bytes };
+    Self {
+      // an empty segment would share its offset with the new one
+      segments: self
+        .segments
+        .iter()
+        .filter(|s| !s.bytes.is_empty())
+        .cloned()
+        .chain([tail])
+        .collect(),
     }
   }
 
@@ -35,6 +61,7 @@ impl Buffer {
   }
 }
 
+#[derive(Clone)]
 pub(crate) struct Segment {
   offset: u32,
   bytes:  Bytes,
