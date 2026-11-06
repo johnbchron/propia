@@ -73,6 +73,8 @@ pub enum EncodeError {
     /// The length available in the mutable slice.
     available: usize,
   },
+  /// An offset for an encoded token span exceeded [`u32::MAX`].
+  OffsetOverflow,
 }
 
 impl Error for EncodeError {}
@@ -94,6 +96,12 @@ impl fmt::Display for EncodeError {
           f,
           "buffer too small to encode token: needed {needed}, found \
            {available}"
+        )
+      }
+      EncodeError::OffsetOverflow => {
+        write!(
+          f,
+          "buffer too large: encoding overflowed offsets past 4 GiB"
         )
       }
     }

@@ -1,4 +1,7 @@
-use crate::{DelimiterTag, EncodeError, Token, ValueTag};
+use crate::{
+  DecodedToken, DecodedTokenIdx, DelimiterTag, EncodeError, Span, Spanned,
+  Token, ValueTag,
+};
 
 /// Encodes a [`Token`] to a `&mut Vec<u8>`.
 ///
@@ -152,4 +155,90 @@ fn encode_value<B: AsRef<[u8]>>(
   put(&mut out, value_bytes);
 
   Ok(())
+}
+
+/// Appends `token` to `out` and returns it as decoded, with spans computed as
+/// if `out[0]` starts at `base`.
+pub fn encode_token_spanned<B: AsRef<[u8]>>(
+  token: &Token<B>,
+  base: u32,
+  out: &mut Vec<u8>,
+) -> Result<DecodedTokenIdx, EncodeError> {
+  // starting offset: base + the bytes already in out
+  let start = u64::from(base) + out.len() as u64;
+  // eager check for offset overflow
+  if start + encoded_len(token) as u64 > u64::from(u32::MAX) {
+    return Err(EncodeError::OffsetOverflow);
+  }
+  let start = start as u32;
+
+  // encode the token but remove the bytes if an error occurs
+  let before = out.len();
+  if let Err(e) = encode_token_to_vec(token, out) {
+    out.truncate(before);
+    return Err(e);
+  }
+
+  // helpers for computing spans
+  let at = |from: u32, len: u32| Span::new(start + from, start + from + len);
+  let val = |span| Spanned { value: (), span };
+
+  // compute spans from token
+  Ok(match token {
+    Token::Header {
+      version,
+      operation_or_status,
+      request_id,
+    } => DecodedToken::Header {
+      span:                at(0, 8),
+      version:             (
+        Spanned {
+          value: version.0,
+          span:  at(0, 1),
+        },
+        Spanned {
+          value: version.1,
+          span:  at(1, 1),
+        },
+      ),
+      operation_or_status: Spanned {
+        value: *operation_or_status,
+        span:  at(2, 2),
+      },
+      request_id:          Spanned {
+        value: *request_id,
+        span:  at(4, 4),
+      },
+    },
+    Token::Delimiter { tag } => DecodedToken::Delimiter {
+      tag: Spanned {
+        value: *tag,
+        span:  at(0, 1),
+      },
+    },
+    Token::Value { tag, name, value } => {
+      let name_len = name.as_ref().len() as u32;
+      let value_len = value.as_ref().len() as u32;
+      let mut pos = 3 + name_len + 2;
+      let extension_type_span =
+        matches!(tag, ValueTag::Extension { .. }).then(|| {
+          let span = at(pos, 4);
+          pos += 4;
+          span
+        });
+      DecodedToken::Value {
+        span: at(0, pos + value_len),
+        tag: Spanned {
+          value: *tag,
+          span:  at(0, 1),
+        },
+        extension_type_span,
+        name: val(at(3, name_len)),
+        value: val(at(pos, value_len)),
+      }
+    }
+    Token::Data { data } => DecodedToken::Data {
+      data: val(at(0, data.as_ref().len() as u32)),
+    },
+  })
 }
