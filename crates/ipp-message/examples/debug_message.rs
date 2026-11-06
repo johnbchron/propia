@@ -4,7 +4,7 @@
 use std::io::{self, Read};
 
 use bytes::Bytes;
-use ipp_model::{Assembled, Assembler, Limits, Progress};
+use ipp_message::{Assembled, Assembler, Limits, Progress};
 
 fn assemble(mut input: impl Read) -> io::Result<Assembled> {
   let mut assembler = Assembler::new(Limits::default());

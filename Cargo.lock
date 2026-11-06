@@ -50,7 +50,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ipp-model"
+name = "ipp-message"
 version = "0.1.0"
 dependencies = [
  "bytes",
