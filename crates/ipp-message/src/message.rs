@@ -8,9 +8,13 @@ use ipp_wire::{DecodedToken, DecodedTokenIdx, DelimiterTag, ValueTag};
 pub use self::view::*;
 use crate::{Diagnostic, Kind, buffer::Buffer};
 
+/// An IPP message, structurally decoded.
 pub struct Message(Arc<Inner>);
 
 impl Message {
+  /// Builds a [`Message`] from a buffer and its stream of tokens. This is
+  /// infalliable given that the tokens have already been decoded, and if there
+  /// are problems, a [`Diagnostic`] will be recorded.
   pub(crate) fn build(buffer: Buffer, tokens: Vec<DecodedTokenIdx>) -> Self {
     let builder = Builder::default().run(&tokens);
 

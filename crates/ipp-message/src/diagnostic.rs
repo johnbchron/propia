@@ -1,8 +1,12 @@
 use std::fmt;
 
+/// A diagnostic message representing a structural error in an IPP
+/// [`Message`](crate::Message).
 #[derive(Debug)]
 pub struct Diagnostic {
+  /// The token the diagnostic occurred at.
   pub token: u32,
+  /// The kind of diagnostic that occurred.
   pub kind:  Kind,
 }
 
@@ -12,6 +16,7 @@ impl fmt::Display for Diagnostic {
   }
 }
 
+/// Describes the problem that produced a [`Diagnostic`].
 #[derive(Debug)]
 pub enum Kind {
   AttributeBeforeGroup,

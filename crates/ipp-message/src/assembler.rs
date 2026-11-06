@@ -5,6 +5,7 @@ use ipp_wire::{
 
 use crate::{Message, buffer::Buffer};
 
+/// Assembles an IPP [`Message`] from a byte stream.
 pub struct Assembler {
   decoder: Decoder,
   buf:     BytesMut,
@@ -118,6 +119,7 @@ impl Assembler {
   }
 }
 
+/// Limits to be used in assembling an IPP [`Message`].
 #[derive(Clone, Debug)]
 pub struct Limits {
   /// The maximum number of bytes allowed in a message's attribute data.
@@ -135,11 +137,13 @@ impl Default for Limits {
   }
 }
 
+/// The progress of message assembly after pushing a slice of bytes.
 pub enum Progress {
   More(Assembler),
   Done(Assembled),
 }
 
+/// The output of assembling a [`Message`] from a byte stream.
 #[derive(Debug)]
 pub struct Assembled {
   pub message: Message,
@@ -149,6 +153,8 @@ pub struct Assembled {
   pub end:     EndState,
 }
 
+/// Describes the end state of [`Message`] assembly, which is an infalliable
+/// operation.
 #[derive(Debug)]
 pub enum EndState {
   /// A `Message` was produced.

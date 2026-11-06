@@ -3,7 +3,7 @@ use ipp_wire::{DecodedToken, DelimiterTag, Span, ValueTag};
 use super::{AttrIdx, AttrRow, GroupRow, Inner, Message, ValueIdx, ValueRow};
 use crate::Diagnostic;
 
-/// The fields of a message header.
+/// The fields of an IPP [`Message`] header.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Header {
   /// The version, as `(major, minor)`.
@@ -75,7 +75,6 @@ impl Inner {
     }
   }
 
-  /// Produces an [`AttrRef`] view.
   fn attr(&self, index: AttrIdx) -> AttrRef<'_> {
     AttrRef {
       msg: self,
@@ -91,7 +90,7 @@ impl Inner {
   }
 }
 
-/// A view of an attribute group.
+/// A view of an IPP Attribute Group.
 #[derive(Clone, Copy)]
 pub struct GroupRef<'m> {
   msg: &'m Inner,
@@ -100,7 +99,7 @@ pub struct GroupRef<'m> {
 
 impl<'m> GroupRef<'m> {
   /// Returns the group's tag. An implicit group, opened by an attribute with no
-  /// preceding delimiter, has none.
+  /// preceding delimiter, has no tag.
   #[must_use]
   pub fn tag(self) -> Option<DelimiterTag> {
     match self.msg.tokens[self.row.tokens.start as usize] {
@@ -120,7 +119,7 @@ impl<'m> GroupRef<'m> {
     self.get_all(name).next()
   }
 
-  /// Iterates through all the attributes in the group with the given name.
+  /// Iterates through all the attributes in the group that have the given name.
   pub fn get_all(
     self,
     name: impl AsRef<[u8]>,
@@ -129,7 +128,7 @@ impl<'m> GroupRef<'m> {
   }
 }
 
-/// A view of an attribute.
+/// A view of an IPP Attribute.
 #[derive(Clone, Copy)]
 pub struct AttrRef<'m> {
   msg: &'m Inner,
@@ -137,6 +136,7 @@ pub struct AttrRef<'m> {
 }
 
 impl<'m> AttrRef<'m> {
+  /// Returns the attribute's name.
   pub fn name(self) -> &'m [u8] {
     let token = self.msg.value_token(self.row.tokens.start);
 
@@ -163,7 +163,7 @@ impl<'m> AttrRef<'m> {
   }
 }
 
-/// A view of a value.
+/// A view of an IPP Value.
 #[derive(Clone, Copy)]
 pub struct ValueRef<'m> {
   msg: &'m Inner,
@@ -188,13 +188,14 @@ impl<'m> ValueRef<'m> {
   #[must_use]
   pub fn is_collection(self) -> bool { self.tag() == ValueTag::BEG_COLLECTION }
 
-  /// Iterates through a collection's members. Empty for anything else.
+  /// Iterates through a collection's members. This iterator is empty if not the
+  /// value is not a collection.
   pub fn members(self) -> impl ExactSizeIterator<Item = AttrRef<'m>> {
     let msg = self.msg;
     self.row.members.iter().map(move |&index| msg.attr(index))
   }
 
-  /// Returns the first member with this name.
+  /// Returns the first member with this name, if this value is a collection.
   pub fn member(self, name: impl AsRef<[u8]>) -> Option<AttrRef<'m>> {
     self.members().find(|a| a.name() == name.as_ref())
   }
