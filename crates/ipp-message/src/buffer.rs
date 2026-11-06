@@ -15,7 +15,7 @@ impl Buffer {
     }
   }
 
-  /// The first after the last segment.
+  /// The first offset after the last segment.
   pub(crate) fn end(&self) -> u32 {
     let last = self.segments.last().expect("a buffer always has a segment");
     last.offset + last.bytes.len() as u32

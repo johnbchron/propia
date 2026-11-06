@@ -72,16 +72,16 @@ impl Message {
 }
 
 /// An isolated [`DecodedTokenIdx::Value`](ipp_wire::DecodedTokenIdx::Value).
-struct ValueToken {
-  tag:   ValueTag,
-  name:  Span,
-  value: Span,
+pub(crate) struct ValueToken {
+  pub(crate) tag:   ValueTag,
+  pub(crate) name:  Span,
+  pub(crate) value: Span,
 }
 
 impl Inner {
   /// Extracts a [`ValueToken`] from the message token stream. Only call on
   /// `Value` tokens.
-  fn value_token(&self, i: u32) -> ValueToken {
+  pub(crate) fn value_token(&self, i: u32) -> ValueToken {
     match self.tokens[i as usize] {
       DecodedToken::Value {
         tag, name, value, ..
@@ -157,8 +157,8 @@ impl FusedIterator for Spans<'_> {}
 /// A view of an IPP Attribute Group.
 #[derive(Clone, Copy)]
 pub struct GroupRef<'m> {
-  msg: &'m Inner,
-  row: &'m GroupRow,
+  pub(crate) msg: &'m Inner,
+  pub(crate) row: &'m GroupRow,
 }
 
 impl<'m> GroupRef<'m> {
@@ -195,8 +195,8 @@ impl<'m> GroupRef<'m> {
 /// A view of an IPP Attribute.
 #[derive(Clone, Copy)]
 pub struct AttrRef<'m> {
-  msg: &'m Inner,
-  row: &'m AttrRow,
+  pub(crate) msg: &'m Inner,
+  pub(crate) row: &'m AttrRow,
 }
 
 impl<'m> AttrRef<'m> {
@@ -230,8 +230,8 @@ impl<'m> AttrRef<'m> {
 /// A view of an IPP Value.
 #[derive(Clone, Copy)]
 pub struct ValueRef<'m> {
-  msg: &'m Inner,
-  row: &'m ValueRow,
+  pub(crate) msg: &'m Inner,
+  pub(crate) row: &'m ValueRow,
 }
 
 impl<'m> ValueRef<'m> {

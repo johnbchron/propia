@@ -159,6 +159,7 @@ fn encode_value<B: AsRef<[u8]>>(
 
 /// Appends `token` to `out` and returns it as decoded, with spans computed as
 /// if `out[0]` starts at `base`.
+#[allow(clippy::missing_errors_doc)]
 pub fn encode_token_spanned<B: AsRef<[u8]>>(
   token: &Token<B>,
   base: u32,

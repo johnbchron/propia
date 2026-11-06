@@ -10,7 +10,7 @@ use crate::{Diagnostic, Kind, buffer::Buffer};
 
 /// An IPP message, structurally decoded.
 #[derive(Clone)]
-pub struct Message(Arc<Inner>);
+pub struct Message(pub(crate) Arc<Inner>);
 
 impl Message {
   /// Builds a [`Message`] from a buffer and its stream of tokens. This is
@@ -30,37 +30,37 @@ impl Message {
   }
 }
 
-struct Inner {
-  buffer:      Buffer,
-  tokens:      Box<[DecodedTokenIdx]>,
-  groups:      Box<[GroupRow]>,
-  attrs:       Box<[AttrRow]>,
-  values:      Box<[ValueRow]>,
-  diagnostics: Box<[Diagnostic]>,
+pub(crate) struct Inner {
+  pub(crate) buffer: Buffer,
+  pub(crate) tokens: Box<[DecodedTokenIdx]>,
+  groups:            Box<[GroupRow]>,
+  pub(crate) attrs:  Box<[AttrRow]>,
+  pub(crate) values: Box<[ValueRow]>,
+  diagnostics:       Box<[Diagnostic]>,
 }
 
 #[derive(Clone, Copy)]
 struct GroupIdx(u32);
 
 #[derive(Clone, Copy)]
-struct AttrIdx(u32);
+pub(crate) struct AttrIdx(pub(crate) u32);
 
 #[derive(Clone, Copy)]
-struct ValueIdx(u32);
+pub(crate) struct ValueIdx(pub(crate) u32);
 
-struct GroupRow {
-  tokens: Range<u32>,
-  attrs:  Box<[AttrIdx]>,
+pub(crate) struct GroupRow {
+  pub(crate) tokens: Range<u32>,
+  attrs:             Box<[AttrIdx]>,
 }
 
-struct AttrRow {
-  tokens: Range<u32>,
-  values: Box<[ValueIdx]>,
+pub(crate) struct AttrRow {
+  pub(crate) tokens: Range<u32>,
+  pub(crate) values: Box<[ValueIdx]>,
 }
 
-struct ValueRow {
-  tokens:  Range<u32>,
-  members: Box<[AttrIdx]>,
+pub(crate) struct ValueRow {
+  pub(crate) tokens:  Range<u32>,
+  pub(crate) members: Box<[AttrIdx]>,
 }
 
 #[derive(Default)]
