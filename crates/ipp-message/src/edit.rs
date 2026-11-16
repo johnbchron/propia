@@ -6,7 +6,7 @@ use std::{cmp::Reverse, collections::BTreeMap};
 use bytes::Bytes;
 use ipp_wire::{
   DecodedToken, DelimiterTag, EncodeError, Token, ValueTag,
-  encode_token_spanned,
+  encode_token_to_vec_spanned,
 };
 
 pub use self::owned::*;
@@ -218,7 +218,7 @@ impl<'m> Edit<'m> {
         operation_or_status: h.operation_or_status,
         request_id:          h.request_id,
       };
-      tokens.push(encode_token_spanned(&header, base, &mut fresh)?);
+      tokens.push(encode_token_to_vec_spanned(&header, base, &mut fresh)?);
       pos = u32::from(!msg.tokens.is_empty());
     }
 
@@ -237,7 +237,7 @@ impl<'m> Edit<'m> {
       tokens
         .extend_from_slice(&msg.tokens[pos as usize..splice.start as usize]);
       for token in &splice.run {
-        tokens.push(encode_token_spanned(token, base, &mut fresh)?);
+        tokens.push(encode_token_to_vec_spanned(token, base, &mut fresh)?);
       }
       if !splice.is_insert() {
         removed = Some((splice.end, splice.rank));

@@ -7,7 +7,9 @@ use crate::{
 ///
 /// Any token that can be encoded normally will be encoded; errors will only be
 /// thrown for structural problems with a token.
-#[allow(clippy::missing_errors_doc)]
+///
+/// # Errors
+/// If an error is thrown while encoding, partial writes are cleaned up.
 pub fn encode_token_to_vec<B: AsRef<[u8]>>(
   token: &Token<B>,
   out: &mut Vec<u8>,
@@ -15,11 +17,20 @@ pub fn encode_token_to_vec<B: AsRef<[u8]>>(
   let encoded_len = encoded_len(token);
   let before_len = out.len();
   out.resize(before_len + encoded_len, 0);
+
   let after_len = out.len();
-  encode_token(token, &mut out[before_len..after_len]).map(|_| ())
+  let out_slice = &mut out[before_len..after_len];
+
+  match encode_token(token, out_slice) {
+    Ok(_n) => Ok(()),
+    Err(e) => {
+      out.truncate(before_len);
+      Err(e)
+    }
+  }
 }
 
-/// Returns the encoded length of a token. Will not reject an invalid token.
+/// Returns how many bytes it would take to encode a token.
 #[must_use]
 pub fn encoded_len<B: AsRef<[u8]>>(token: &Token<B>) -> usize {
   match token {
@@ -49,7 +60,12 @@ fn put(out: &mut &mut [u8], bytes: &[u8]) {
 /// [`encoded_len`] to get the encoded length. Any token that can be encoded
 /// normally will be encoded; errors will only be thrown for structural problems
 /// with a token.
-#[allow(clippy::missing_errors_doc)]
+///
+/// # Errors
+/// If the buffer is too small for the token to be encoded,
+/// [`EncodeError::BufferTooSmall`] will be returned and nothing will be
+/// written. For any other error, a partial token may be written; partial write
+/// cleanup is the responsibility of the caller.
 pub fn encode_token<B: AsRef<[u8]>>(
   token: &Token<B>,
   mut out: &mut [u8],
@@ -157,16 +173,22 @@ fn encode_value<B: AsRef<[u8]>>(
   Ok(())
 }
 
-/// Appends `token` to `out` and returns it as decoded, with spans computed as
-/// if `out[0]` starts at `base`.
-#[allow(clippy::missing_errors_doc)]
-pub fn encode_token_spanned<B: AsRef<[u8]>>(
+/// Encodes a [`Token`] to a `&mut Vec<u8>`, and recomputes the spans according
+/// to the output buffer.
+///
+/// Any token that can be encoded normally will be encoded; errors will only be
+/// thrown for structural problems with a token.
+///
+/// # Errors
+/// If an error is thrown while encoding, partial writes are cleaned up.
+pub fn encode_token_to_vec_spanned<B: AsRef<[u8]>>(
   token: &Token<B>,
   base: u32,
   out: &mut Vec<u8>,
 ) -> Result<DecodedTokenIdx, EncodeError> {
   // starting offset: base + the bytes already in out
   let start = u64::from(base) + out.len() as u64;
+
   // eager check for offset overflow
   if start + encoded_len(token) as u64 > u64::from(u32::MAX) {
     return Err(EncodeError::OffsetOverflow);
@@ -174,11 +196,7 @@ pub fn encode_token_spanned<B: AsRef<[u8]>>(
   let start = start as u32;
 
   // encode the token but remove the bytes if an error occurs
-  let before = out.len();
-  if let Err(e) = encode_token_to_vec(token, out) {
-    out.truncate(before);
-    return Err(e);
-  }
+  encode_token_to_vec(token, out)?;
 
   // helpers for computing spans
   let at = |from: u32, len: u32| Span::new(start + from, start + from + len);
