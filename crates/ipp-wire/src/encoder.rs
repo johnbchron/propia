@@ -181,6 +181,7 @@ fn encode_value<B: AsRef<[u8]>>(
 ///
 /// # Errors
 /// If an error is thrown while encoding, partial writes are cleaned up.
+#[allow(clippy::missing_panics_doc)]
 pub fn encode_token_to_vec_spanned<B: AsRef<[u8]>>(
   token: &Token<B>,
   base: u32,
@@ -193,7 +194,7 @@ pub fn encode_token_to_vec_spanned<B: AsRef<[u8]>>(
   if start + encoded_len(token) as u64 > u64::from(u32::MAX) {
     return Err(EncodeError::OffsetOverflow);
   }
-  let start = start as u32;
+  let start = u32::try_from(start).unwrap();
 
   // encode the token but remove the bytes if an error occurs
   encode_token_to_vec(token, out)?;
@@ -236,8 +237,8 @@ pub fn encode_token_to_vec_spanned<B: AsRef<[u8]>>(
       },
     },
     Token::Value { tag, name, value } => {
-      let name_len = name.as_ref().len() as u32;
-      let value_len = value.as_ref().len() as u32;
+      let name_len = u32::try_from(name.as_ref().len()).unwrap();
+      let value_len = u32::try_from(value.as_ref().len()).unwrap();
       let mut pos = 3 + name_len + 2;
       let extension_type_span =
         matches!(tag, ValueTag::Extension { .. }).then(|| {
@@ -257,7 +258,7 @@ pub fn encode_token_to_vec_spanned<B: AsRef<[u8]>>(
       }
     }
     Token::Data { data } => DecodedToken::Data {
-      data: val(at(0, data.as_ref().len() as u32)),
+      data: val(at(0, u32::try_from(data.as_ref().len()).unwrap())),
     },
   })
 }
