@@ -85,7 +85,7 @@ pub fn encode_token<B: AsRef<[u8]>>(
       encode_header(*version, *operation_or_status, *request_id, out);
     }
     Token::Delimiter { tag } => {
-      encode_delimiter(*tag, out);
+      encode_delimiter(*tag, out)?;
     }
     Token::Value {
       tag, name, value, ..
@@ -116,8 +116,18 @@ fn encode_header(
   put(&mut out, &yielded_slice);
 }
 
-fn encode_delimiter(tag: DelimiterTag, mut out: &mut [u8]) {
+fn encode_delimiter(
+  tag: DelimiterTag,
+  mut out: &mut [u8],
+) -> Result<(), EncodeError> {
+  // anything 0x10 or higher will be read back as a value tag
+  if let 0x10.. = tag.0 {
+    return Err(EncodeError::InvalidDelimiterTag { tag });
+  }
+
   put(&mut out, &[tag.0]);
+
+  Ok(())
 }
 
 fn encode_value<B: AsRef<[u8]>>(
@@ -126,9 +136,16 @@ fn encode_value<B: AsRef<[u8]>>(
   value: &B,
   mut out: &mut [u8],
 ) -> Result<(), EncodeError> {
-  // this should be a ValueTag::Extension, but we don't have the extension type
-  if let ValueTag::Standard(0x7F) = tag {
-    return Err(EncodeError::InvalidValueTag { tag });
+  match tag {
+    // this would be read back as a delimiter tag
+    ValueTag::Standard(0x00..=0x0F) => {
+      return Err(EncodeError::InvalidValueTag { tag });
+    }
+    // this should be a ValueTag::Extension, but we don't have the type
+    ValueTag::Standard(0x7F) => {
+      return Err(EncodeError::InvalidValueTag { tag });
+    }
+    _ => (),
   }
 
   // calculate name length and value length, exiting early if needed

@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-use crate::ValueTag;
+use crate::{DelimiterTag, ValueTag};
 
 /// An error encountered in decoding [`DecodedToken`](crate::DecodedToken)s.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -66,6 +66,11 @@ pub enum EncodeError {
     /// The invalid value tag.
     tag: ValueTag,
   },
+  /// The delimiter tag is invalid.
+  InvalidDelimiterTag {
+    /// The invalid delimiter tag.
+    tag: DelimiterTag,
+  },
   /// The given slice is too small to encode the token.
   BufferTooSmall {
     /// The length needed to encode the whole token.
@@ -90,6 +95,9 @@ impl fmt::Display for EncodeError {
       }
       EncodeError::InvalidValueTag { tag } => {
         write!(f, "invalid token: the value tag is invalid: {tag:?}")
+      }
+      EncodeError::InvalidDelimiterTag { tag } => {
+        write!(f, "invalid token: the delimiter tag is invalid: {tag:?}")
       }
       EncodeError::BufferTooSmall { needed, available } => {
         write!(
