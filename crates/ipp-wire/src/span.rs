@@ -1,6 +1,7 @@
 use std::{fmt, ops::Range};
 
 /// Absolute byte range (half-open) into the document, across every buffer.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span {
   /// The starting offset of the range.
@@ -41,6 +42,7 @@ impl Span {
 }
 
 /// A value with its originating span.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Spanned<T> {
   /// The value itself.

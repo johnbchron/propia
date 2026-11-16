@@ -20,6 +20,7 @@ use crate::{Span, Spanned};
 /// [`map_generic`](DecodedToken::map_generic). This property allows one, for
 /// example, to decode tokens from byte slices as they come in and then strip
 /// the references to allow dropping the buffers.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DecodedToken<B> {
   /// The header token, containing the fields always found at the beginning of
@@ -194,6 +195,7 @@ impl DecodedTokenIdx {
 /// are generic on their representation. The generic used for variable-length
 /// fields can be converted to some other type with
 /// [`map_generic`](Token::map_generic).
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Token<B> {
   /// The header token, containing the fields always found at the beginning of
@@ -273,6 +275,7 @@ impl<B> Token<B> {
 pub type TokenRef<'a> = Token<&'a [u8]>;
 
 /// A delimiter tag. Only in the range `0x00..=0x0F`
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DelimiterTag(pub u8);
 
@@ -288,6 +291,7 @@ impl DelimiterTag {
 
 /// A tag that delimits the start of a [`DecodedToken::Value`] or
 /// [`Token::Value`].
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ValueTag {
   /// An RFC 8010-defined value type, falling in the range `0x10..=0xFF`. Not
