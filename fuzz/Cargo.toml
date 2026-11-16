@@ -8,10 +8,9 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
-
-[dependencies.ipp-wire]
-path = "../crates/ipp-wire"
+ipp-wire = { path = "../crates/ipp-wire", features = [ "arbitrary" ] }
+libfuzzer-sys = { version = "0.4" }
+arbitrary = { workspace = true }
 
 [[bin]]
 name = "tokens"
@@ -30,6 +29,13 @@ bench = false
 [[bin]]
 name = "reencode"
 path = "fuzz_targets/reencode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "roundtrip"
+path = "fuzz_targets/roundtrip.rs"
 test = false
 doc = false
 bench = false
