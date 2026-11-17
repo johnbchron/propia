@@ -83,6 +83,7 @@ name = "ipp-wire-fuzz"
 version = "0.0.0"
 dependencies = [
  "arbitrary",
+ "ipp-message",
  "ipp-wire",
  "libfuzzer-sys",
 ]

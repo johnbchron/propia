@@ -8,9 +8,10 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
-ipp-wire = { path = "../crates/ipp-wire", features = [ "arbitrary" ] }
-libfuzzer-sys = { version = "0.4" }
 arbitrary = { workspace = true }
+ipp-wire = { path = "../crates/ipp-wire", features = [ "arbitrary" ] }
+ipp-message = { path = "../crates/ipp-message" }
+libfuzzer-sys = { version = "0.4" }
 
 [[bin]]
 name = "wire-tokens"
@@ -36,6 +37,13 @@ bench = false
 [[bin]]
 name = "wire-roundtrip"
 path = "fuzz_targets/wire-roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "message-structure"
+path = "fuzz_targets/message-structure.rs"
 test = false
 doc = false
 bench = false

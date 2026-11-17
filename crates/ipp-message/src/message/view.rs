@@ -1,4 +1,4 @@
-use std::{iter::FusedIterator, slice};
+use std::{iter::FusedIterator, range::Range, slice};
 
 use bytes::{Bytes, BytesMut};
 use ipp_wire::{DecodedToken, DecodedTokenIdx, DelimiterTag, Span, ValueTag};
@@ -18,6 +18,9 @@ pub struct Header {
 }
 
 impl Message {
+  /// Returns the slice of tokens this message was produced from.
+  pub fn tokens(&self) -> &[DecodedTokenIdx] { &self.0.tokens }
+
   /// Returns the header, unless the message was truncated before it finished.
   pub fn header(&self) -> Option<Header> {
     match self.0.tokens.first()? {
@@ -162,6 +165,9 @@ pub struct GroupRef<'m> {
 }
 
 impl<'m> GroupRef<'m> {
+  /// Returns the range of tokens this group covers.
+  pub fn tokens(self) -> Range<u32> { self.row.tokens }
+
   /// Returns the group's tag. An implicit group, opened by an attribute with no
   /// preceding delimiter, has no tag.
   #[must_use]
@@ -200,6 +206,9 @@ pub struct AttrRef<'m> {
 }
 
 impl<'m> AttrRef<'m> {
+  /// Returns the range of tokens this attribute covers.
+  pub fn tokens(self) -> Range<u32> { self.row.tokens }
+
   /// Returns the attribute's name.
   pub fn name(self) -> &'m [u8] {
     let token = self.msg.value_token(self.row.tokens.start);
@@ -235,6 +244,9 @@ pub struct ValueRef<'m> {
 }
 
 impl<'m> ValueRef<'m> {
+  /// Returns the range of tokens this attribute covers.
+  pub fn tokens(self) -> Range<u32> { self.row.tokens }
+
   /// Returns the value's tag.
   #[must_use]
   pub fn tag(self) -> ValueTag {
