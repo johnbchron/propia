@@ -13,29 +13,29 @@ libfuzzer-sys = { version = "0.4" }
 arbitrary = { workspace = true }
 
 [[bin]]
-name = "tokens"
-path = "fuzz_targets/tokens.rs"
+name = "wire-tokens"
+path = "fuzz_targets/wire-tokens.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "streaming"
-path = "fuzz_targets/streaming.rs"
+name = "wire-streaming"
+path = "fuzz_targets/wire-streaming.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "reencode"
-path = "fuzz_targets/reencode.rs"
+name = "wire-reencode"
+path = "fuzz_targets/wire-reencode.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "roundtrip"
-path = "fuzz_targets/roundtrip.rs"
+name = "wire-roundtrip"
+path = "fuzz_targets/wire-roundtrip.rs"
 test = false
 doc = false
 bench = false
