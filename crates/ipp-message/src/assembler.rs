@@ -6,6 +6,90 @@ use ipp_wire::{
 use crate::{Message, buffer::Buffer};
 
 /// Assembles an IPP [`Message`] from a byte stream.
+///
+/// `Assembler` is a separate type from [`Message`] because it is a sans-IO
+/// state machine, meaning it doesn't touch or drive any IO. Additionally, the
+/// process of assembling a message is a *total function*, meaning it will
+/// always succeed.
+///
+/// ## Assembling a message
+/// Essentially, to assemble a message you feed the `Assembler` chunks of bytes
+/// using [`push`](Assembler::push) until either **1)** the assembler tells you
+/// it's done by returning [`Progress::Done`] (if not, it will return itself in
+/// [`Progress::More`]), or **2)** you run out of bytes and you call
+/// [`finish`](Assembler::finish) on it.
+///
+/// In either case, you end up with an [`Assembled`], which contains the
+/// [`Message`], any leftover bytes (which are part of the job data), and an
+/// [`EndState`], which indicates if assembling ended with an error or limit
+/// breach.
+///
+/// Admittedly, the API shape here can make control flow a little difficult, but
+/// it's for good reason. The `Assembler` only needs the attribute data at the
+/// beginning of an IPP message, and the rest of the message (the job data)
+/// should not be buffered. Thus it is desirable to parse just the first part of
+/// a data stream, produce a [`Message`], and keep the rest of the stream
+/// intact. This is enabled by the current design.
+///
+/// One could imagine shaping something like this into an Axum extractor, where
+/// the extractor consumes the request body and returns something like
+/// `Extractor((Message, EndState, [rest of the job data]))`.
+///
+/// Here is an example.
+///
+/// ```
+/// use std::assert_matches;
+///
+/// use bytes::Bytes;
+/// use ipp_message::{Assembled, Assembler, EndState, Header, Limits, Progress};
+/// use ipp_wire::{DecodeError, DecodeErrorKind};
+///
+/// // takes a byte-stream-like and returns Assembled
+/// fn simple_assemble<I: Iterator<Item = Bytes>>(iter: &mut I) -> Assembled {
+///   let mut assembler = Assembler::new(Limits::default());
+///
+///   for bytes in iter {
+///     assembler = match assembler.push(&bytes) {
+///       Progress::More(assembler) => assembler,
+///       Progress::Done(assembled) => return assembled,
+///     }
+///   }
+///
+///   // finish anyway if bytes ran out
+///   return assembler.finish();
+/// }
+///
+/// let bytes: [Bytes; 8] = core::array::from_fn(|_| {
+///   Bytes::from_owner((0u8..).take(128).collect::<Vec<_>>())
+/// });
+/// let mut iter = bytes.into_iter();
+///
+/// // assemble the message
+/// let Assembled { message, rest, end } = simple_assemble(&mut iter);
+///
+/// // reattach the any leftovers the assembler gave back
+/// let _job_data_chunks = std::iter::once(rest).chain(iter);
+///
+/// // this is a garbage message, so it says an error occurred, but the message
+/// // still exists and is readable because assembling always succeeds
+/// assert_matches!(
+///   end,
+///   EndState::Failed(DecodeError {
+///     kind: DecodeErrorKind::Truncated { .. },
+///     ..
+///   })
+/// );
+///
+/// // header still works
+/// assert_eq!(
+///   message.header(),
+///   Some(Header {
+///     version:             (0, 1),
+///     operation_or_status: u16::from_be_bytes([2, 3]),
+///     request_id:          u32::from_be_bytes([4, 5, 6, 7]),
+///   })
+/// );
+/// ```
 pub struct Assembler {
   decoder: Decoder,
   buf:     BytesMut,
@@ -20,6 +104,7 @@ pub struct Assembler {
 }
 
 impl Assembler {
+  /// Builds a new assembler with the given [`Limits`].
   pub fn new(limits: Limits) -> Self {
     Self {
       decoder: Decoder::new(),
