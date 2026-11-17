@@ -1,6 +1,7 @@
 #![warn(missing_docs)]
 
 //! # `ipp-wire` - An RFC 8010 tokenizer (and encoder)
+//!
 //! `ipp-wire` aides in decoding and encoding messages in the **IPP wire
 //! format** described by [RFC 8010][1], specifically the conversion between raw
 //! bytes and collections of tokens. Further contextual and stateful
