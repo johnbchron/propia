@@ -139,6 +139,10 @@ impl Assembler {
       // don't consume more bytes than allowed
       let stop = self.buf.len().min(self.limits.max_bytes as usize);
 
+      if self.tokens.len() >= self.limits.max_tokens as usize {
+        return Some(EndState::LimitExceeded);
+      }
+
       // attempt to decode a token from unprocessed bytes.
       match self.decoder.decode(&self.buf[self.pos..stop], eof) {
         // successful decode
@@ -155,10 +159,6 @@ impl Assembler {
 
           if done {
             return Some(EndState::Complete);
-          }
-
-          if self.tokens.len() >= self.limits.max_tokens as usize {
-            return Some(EndState::LimitExceeded);
           }
         }
 
