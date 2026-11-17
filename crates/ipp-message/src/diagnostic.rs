@@ -19,13 +19,21 @@ impl fmt::Display for Diagnostic {
 /// Describes the problem that produced a [`Diagnostic`].
 #[derive(Debug)]
 pub enum Kind {
+  /// An attribute was found before a group was opened.
   AttributeBeforeGroup,
+  /// A member attribute was found outside of a collection.
   MemberNameOutsideCollection,
+  /// A member attribute contained a populated name field.
   NamedMemberAttrName,
+  /// A named attribute was found inside a collection.
   NamedValueInCollection,
+  /// A stray end-collection attribute was found outside of a collection.
   StrayEndCollection,
+  /// A collection was not closed before the end of its group.
   UnclosedCollection,
+  /// A stray data token was found.
   UnexpectedToken,
+  /// An unnamed value was found without a preceeding array attribute.
   ValueWithoutAttribute,
 }
 
