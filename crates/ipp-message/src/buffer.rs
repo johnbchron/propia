@@ -3,6 +3,7 @@ use std::sync::Arc;
 use bytes::Bytes;
 use ipp_wire::Span;
 
+/// A buffer constructed from a collection of [`Bytes`].
 #[derive(Clone)]
 pub(crate) struct Buffer {
   segments: Arc<[Segment]>,
