@@ -1,10 +1,13 @@
+//! Decodes tokens from random data and makes sure that spans match up.
+
 #![no_main]
 
 use ipp_wire::{DecodeIterator, DecodedTokenRef, Span, Spanned, ValueTag};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
-  let mut next = 0u32;
+  let mut next = 0;
+
   for item in DecodeIterator::new(data).unwrap() {
     let token = match item {
       Ok(token) => token,
@@ -13,10 +16,13 @@ fuzz_target!(|data: &[u8]| {
         return;
       }
     };
+
     assert_eq!(token.span().start, next, "gap or overlap at {token:?}");
     check_token(data, &token);
+
     next = token.span().end;
   }
+
   // a successful parse always ends with a Data token running to the end
   assert_eq!(next as usize, data.len(), "tokens don't cover input");
 });

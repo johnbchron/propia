@@ -1,3 +1,5 @@
+//! Decodes tokens from random bytes and makes sure they re-encode to the same.
+
 #![no_main]
 
 use ipp_wire::{DecodeIterator, encode_token_to_vec};
@@ -22,6 +24,7 @@ fuzz_target!(|data: &[u8]| {
     );
     end = span.end;
   }
+
   // on success the Data token runs to the end, so this is the whole input
   assert_eq!(out, &data[..end as usize]);
 });

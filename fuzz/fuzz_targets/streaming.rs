@@ -1,3 +1,6 @@
+//! Verifies the output of tokens decoded from a buffer fed all at once,
+//! incremented by exact counts, and incremented by single bytes.
+
 #![no_main]
 
 use ipp_wire::{DecodeError, DecodeIterator, DecodedTokenRef, Decoder, Step};
@@ -58,6 +61,7 @@ fuzz_target!(|data: &[u8]| {
     error:      None,
     body_start: None,
   };
+
   for item in DecodeIterator::new(data).unwrap() {
     match item {
       Ok(DecodedTokenRef::Data { data }) => {
@@ -70,6 +74,7 @@ fuzz_target!(|data: &[u8]| {
 
   for exact in [false, true] {
     let got = stream(data, exact);
+
     assert_eq!(got.tokens, expected.tokens);
     assert_eq!(got.error, expected.error);
     assert_eq!(got.body_start, expected.body_start);

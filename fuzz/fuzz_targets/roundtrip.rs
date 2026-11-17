@@ -1,3 +1,6 @@
+//! Verifies that structurally-generated tokens encode and decode back to the
+//! same tokens.
+
 #![feature(iterator_try_collect)]
 #![no_main]
 
