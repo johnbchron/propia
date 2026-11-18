@@ -9,6 +9,135 @@ pub use self::view::*;
 use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
 
 /// An IPP message, structurally decoded.
+///
+/// `Message`s are produced by the [`Assembler`](crate::Assembler). See its docs
+/// for how to produce a message from bytes.
+///
+/// ```
+/// use std::convert::identity;
+/// use ipp_message::{Assembled, AttrRef, GroupRef, Limits, Message, ValueRef, EndState};
+/// use ipp_wire::DelimiterTag;
+///
+/// const BYTES: &[u8] =
+///   include_bytes!("../../../corpora/ipp-messages-initial/good/1.ipp");
+///
+/// // quickly assemble a message
+/// let Assembled { message, end, .. } = Message::from_slice(BYTES, Limits::default());
+/// assert!(matches!(end, EndState::Complete));
+///
+/// // iterator over attribute groups
+/// let mut groups = message.groups();
+///
+/// // get the first attribute group
+/// let op_attrs: GroupRef = groups.next().unwrap();
+/// assert_eq!(op_attrs.tag(), Some(DelimiterTag::OPERATION_ATTRIBUTES_TAG));
+/// // look at an attribute within the group
+/// let charset_attr: AttrRef = op_attrs.get(b"attributes-charset").unwrap();
+/// // attributes can have multiple values
+/// let charset_val: ValueRef = charset_attr.value(0).unwrap();
+/// assert_eq!(charset_val.bytes(), b"utf-8");
+///
+/// // we want to assert that there is an entry in `media-col` that is at least
+/// // 21.5cm wide and 27cm tall
+///
+/// // this verifier takes a collection value, returning None if an entry is malformed
+/// // the entry we're looking for looks like this:
+/// // [v]: collection {
+/// //   media-size: collection {
+/// //     x-dimension: integer
+/// //     y-dimension: integer
+/// //   }
+/// // }
+/// fn eligible_media(v: ValueRef) -> Option<bool> {
+///   let media_size_attr = v.member(b"media-size")?;
+///   let media_size_col = media_size_attr.value(0)?;
+///
+///   let x_attr = media_size_col.member(b"x-dimension")?;
+///   let x_val = x_attr.value(0)?;
+///   let x_bytes: [u8; 4] = x_val.bytes().try_into().ok()?;
+///   let x = i32::from_be_bytes(x_bytes);
+///   // a `dimension` type is in hundredths of a millimeter
+///   if x < 21500 { return Some(false); }
+///
+///   let y_attr = media_size_col.member(b"y-dimension")?;
+///   let y_val = y_attr.value(0)?;
+///   let y_bytes: [u8; 4] = y_val.bytes().try_into().ok()?;
+///   let y = i32::from_be_bytes(y_bytes);
+///   if y < 27000 { return Some(false); }
+///
+///   Some(true)
+/// }
+///
+/// // find the first `job-attributes` group
+/// let job_attrs_group = message.groups_tagged(DelimiterTag::JOB_ATTRIBUTES_TAG).next().unwrap();
+/// let media_col_attr = job_attrs_group.get(b"media-col").unwrap();
+/// let eligible_media_type = media_col_attr.values()
+///   // filter to just eligible media
+///   .filter(|v| eligible_media(*v) == Some(true))
+///   // filter and map for media that has media-type
+///   .filter_map(|v| v.member(b"media-type")?.value(0).map(|v| v.bytes()))
+///   .next();
+/// assert_eq!(eligible_media_type, Some(b"plain".as_ref()));
+/// ```
+///
+/// # Characteristics of `Message`
+///
+/// ## Minimal & Permissive Decoding
+/// `Message` is only "structurally" decoded, which means that the minimum
+/// amount of work is done to understand the message, but enough to move around
+/// the attribute data tree. Tokens are grouped into groups, attributes, and
+/// values, but value data and name data are not read, decoded, or checked.
+///
+/// This minimal decoding is for two reasons:
+/// 1. To make decoding as **fast** and **efficient** as possible.
+/// 2. To make decoding as **permissive** as possible, allowing the widest range
+///    of both well-formed and malformed messages to be decoded.
+///
+/// `ipp-message` makes as few assumptions about the correctness or value
+/// semantics of a given message as possible, to allow usage with the widest
+/// selection of clients, printers, and applications as possible.
+///
+/// ## Assembling is a Total Function
+/// Assembling is a *total function*, meaning it is made to always succeed on
+/// any number and selection of bytes (up to your set
+/// [`Limits`](crate::Limits), which ends assembling with
+/// [`EndState::LimitExceeded`](crate::EndState)).
+///
+/// Assembling even succeeds on zero bytes. If there are too few bytes for the
+/// header, [`Message::header`] will return `None`. If token decoding fails at
+/// some point (provided by [`ipp_wire::Decoder`]), assembling will stop there
+/// and a [`DecodeError`](ipp_wire::DecodeError) will be returned
+/// within [`EndState`](crate::EndState) alongside the `Message` constructed
+/// from the already-decoded tokens.
+///
+/// That is not to say, however, that a sequence of bytes cannot be considered
+/// malformed when interpreted as an IPP message; for all the various
+/// *structural* defects that such a message can have, [`Diagnostic`]s are
+/// returned by the [`Message::diagnostics`] method, but importantly none of
+/// these are fatal to assembling.
+///
+/// ## The Data Tree and Copy-Free Access
+///
+/// An IPP message is composed of a header, a number of attribute groups, an
+/// `end-of-attributes` tag, and then job data. Attribute groups are accessed by
+/// [`Message::groups`] or [`Message::groups_tagged`], yielding [`GroupRef`].
+/// Each attribute group contains zero or more attributes, accessed by
+/// [`GroupRef::get`] or [`GroupRef::attrs`], yielding [`AttrRef`]. Each
+/// attribute can contain zero or more values, accessed by [`AttrRef::value`] or
+/// [`AttrRef::values`], yielding [`ValueRef`]. Values are usually the bottom of
+/// the tree, but they can also be a *collection value*, meaning they contain a
+/// collection of attributes, accessed by [`ValueRef::member`] or
+/// [`ValueRef::members`].
+///
+/// The `tokens()` method on any of these views return the token range they
+/// cover. All the views borrow the message so that access is copy-free.
+///
+/// ## Cloning Behavior
+///
+/// `Message` is internally backed by [`Arc`], so cloning is cheap.
+///
+/// # Editing a message
+/// todo!()
 #[derive(Clone)]
 pub struct Message(pub(crate) Arc<Inner>);
 
