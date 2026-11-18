@@ -86,7 +86,7 @@ use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
 /// `Message` is only "structurally" decoded, which means that the minimum
 /// amount of work is done to understand the message, but enough to move around
 /// the attribute data tree. Tokens are grouped into groups, attributes, and
-/// values, but value data and name data are not read, decoded, or checked.
+/// values, but data in names and values is not decoded or checked.
 ///
 /// This minimal decoding is for two reasons:
 /// 1. To make decoding as **fast** and **efficient** as possible.
@@ -95,7 +95,7 @@ use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
 ///
 /// `ipp-message` makes as few assumptions about the correctness or value
 /// semantics of a given message as possible, to allow usage with the widest
-/// selection of clients, printers, and applications as possible.
+/// selection of clients, printers, and applications.
 ///
 /// ## Assembling is a Total Function
 /// Assembling is a *total function*, meaning it is made to always succeed on
@@ -137,7 +137,12 @@ use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
 /// `Message` is internally backed by [`Arc`], so cloning is cheap.
 ///
 /// # Editing a message
-/// todo!()
+/// `Message` itself is immutable; all edits to a `Message` starts with a call
+/// to [`edit`](Message::edit), which returns an [`Edit`](crate::Edit).
+/// [`Edit`](crate::Edit) borrows from `Message` and is a builder for a round of
+/// edits that are executed by [`commit`](crate::Edit::commit), which produces a
+/// new `Message`.
+
 #[derive(Clone)]
 pub struct Message(pub(crate) Arc<Inner>);
 
