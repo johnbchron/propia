@@ -6,7 +6,7 @@ use std::{range::Range, sync::Arc};
 use ipp_wire::{DecodedToken, DecodedTokenIdx, DelimiterTag, ValueTag};
 
 pub use self::view::*;
-use crate::{Diagnostic, Kind, buffer::Buffer};
+use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
 
 /// An IPP message, structurally decoded.
 #[derive(Clone)]
@@ -27,6 +27,17 @@ impl Message {
       values: builder.values.into_boxed_slice(),
       diagnostics: builder.diagnostics.into_boxed_slice(),
     }))
+  }
+
+  /// [Assembles](crate::Assembler) a `Message` from a single slice.
+  ///
+  /// Builds an [`Assembler`] with `limits`, pushes the slice to it, and
+  /// finalizes it.
+  pub fn from_slice(slice: &[u8], limits: Limits) -> Assembled {
+    match Assembler::new(limits).push(slice) {
+      crate::Progress::More(assembler) => assembler.finish(),
+      crate::Progress::Done(assembled) => assembled,
+    }
   }
 }
 
