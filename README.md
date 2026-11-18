@@ -3,12 +3,13 @@
 ## Vision
 
 The intent of this project is to create both a robust and reliable IPP print
-server and a suite of tools and libraries that make life with IPP easier.
+server, and a suite of tools and libraries that make life with IPP-enabled
+printers easier.
 
 This project is intentionally IPP-only because we now stand at a point in
 printing history where the tide has shifted toward standardization. The stars
 have aligned such that the opportunity now exists for us to drop the legacy
-printer stack with its drivers and lock-in and switch to a fully driverless
+printer stack with its drivers and lock-in, and switch to a fully driverless
 setup. For that to work we need more fluent tools, stronger infrastructure, and
 better visibility.
 
