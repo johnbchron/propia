@@ -216,6 +216,16 @@ pub struct Limits {
 impl Default for Limits {
   fn default() -> Self {
     Self {
+      max_bytes:  1 << 22, // 4 MiB of attribute data
+      max_tokens: 1 << 16, // 65,536 tokens
+    }
+  }
+}
+
+impl Limits {
+  /// Sets the limits to the maximum values.
+  pub fn unbounded() -> Self {
+    Self {
       max_bytes:  u32::MAX,
       max_tokens: u32::MAX,
     }
