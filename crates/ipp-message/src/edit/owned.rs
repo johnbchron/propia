@@ -3,7 +3,7 @@ use ipp_wire::{DelimiterTag, Token, ValueTag};
 
 use super::{EditError, InvalidTag, Run, tok};
 
-/// An owned IPP Value.
+/// An owned IPP Value, used for making edits to [`Message`](crate::Message)s.
 #[derive(Clone, Debug)]
 pub struct Value {
   pub(crate) run: Run,
@@ -70,7 +70,8 @@ impl Value {
   }
 }
 
-/// An owned IPP Attribute.
+/// An owned IPP Attribute, used for making edits to
+/// [`Message`](crate::Message)s.
 #[derive(Clone, Debug)]
 pub struct Attr {
   name:   Bytes,
@@ -118,7 +119,8 @@ impl Attr {
   }
 }
 
-/// An owned IPP Attribute Group.
+/// An owned IPP Attribute Group, used for making edits to
+/// [`Message`](crate::Message)s.
 #[derive(Clone, Debug)]
 pub struct Group {
   tag:   DelimiterTag,

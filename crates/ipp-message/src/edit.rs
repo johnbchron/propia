@@ -1,3 +1,7 @@
+//! Contains types used for making edits to [`Message`]s.
+//!
+//! See the [`Edit`] docs for more info.
+
 mod mutators;
 mod owned;
 
@@ -20,9 +24,12 @@ fn tok(tag: ValueTag, name: Bytes, value: Bytes) -> Token<Bytes> {
   Token::Value { tag, name, value }
 }
 
+/// An error returned when trying to use an invalid value tag to create an owned
+/// [`Value`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidTag(pub ValueTag);
 
+/// An error occurring when trying to commit a round of edits to a [`Message`].
 #[derive(Debug, PartialEq, Eq)]
 pub enum EditError {
   Encode(EncodeError),
@@ -111,7 +118,10 @@ impl Splice {
   fn is_insert(&self) -> bool { self.start == self.end }
 }
 
-#[must_use = "edits do nothing until committed"]
+/// A builder for a round of edits to a [`Message`].
+///
+/// todo: expand here
+#[must_use = "edits are inert until committed"]
 pub struct Edit<'m> {
   msg:            &'m Message,
   header:         Option<Header>,
