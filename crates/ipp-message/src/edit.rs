@@ -32,9 +32,14 @@ pub struct InvalidTag(pub ValueTag);
 /// An error occurring when trying to commit a round of edits to a [`Message`].
 #[derive(Debug, PartialEq, Eq)]
 pub enum EditError {
+  /// Some failure occurred in encoding the edited tokens.
   Encode(EncodeError),
+  /// An attribute name was present but empty.
   EmptyName,
+  /// A group delimiter tag exceeded `0x0F`.
   InvalidGroupTag(DelimiterTag),
+  /// The first token of the new message was not the header. A message must
+  /// either be completely empty or begin with a header.
   MissingHeader,
 }
 

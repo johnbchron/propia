@@ -1,4 +1,4 @@
-// #![deny(missing_docs)]
+#![deny(missing_docs)]
 
 //! # `ipp-message` - IPP message decoding and editing (RFC 8010)
 //!

@@ -224,13 +224,19 @@ impl Default for Limits {
 
 /// The progress of message assembly after pushing a slice of bytes.
 pub enum Progress {
+  /// The assembler has not reached the `end-of-attributes` tag and is ready to
+  /// ingest more data.
   More(Assembler),
+  /// The assembler reached the `end-of-attributes` tag and has finished its
+  /// decoding. Find the bytes of the last chunk that came after the
+  /// `end-of-attributes` in [`Assembled::rest`].
   Done(Assembled),
 }
 
 /// The output of assembling a [`Message`] from a byte stream.
 #[derive(Debug)]
 pub struct Assembled {
+  /// The assembled message.
   pub message: Message,
   /// All ingested bytes following the last token.
   pub rest:    Bytes,
