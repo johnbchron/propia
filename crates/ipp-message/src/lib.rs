@@ -8,7 +8,7 @@
 mod assembler;
 mod buffer;
 mod diagnostic;
-mod edit;
+pub mod edit;
 mod message;
 
-pub use self::{assembler::*, diagnostic::*, edit::*, message::*};
+pub use self::{assembler::*, diagnostic::*, message::*};

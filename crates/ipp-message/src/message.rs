@@ -138,10 +138,10 @@ use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
 ///
 /// # Editing a message
 /// `Message` itself is immutable; all edits to a `Message` starts with a call
-/// to [`edit`](Message::edit), which returns an [`Edit`](crate::Edit).
-/// [`Edit`](crate::Edit) borrows from `Message` and is a builder for a round of
-/// edits that are executed by [`commit`](crate::Edit::commit), which produces a
-/// new `Message`.
+/// to [`edit`](Message::edit), which returns an [`Edit`](crate::edit::Edit).
+/// [`Edit`](crate::edit::Edit) borrows from `Message` and is a builder for a
+/// round of edits that are executed by [`commit`](crate::edit::Edit::commit),
+/// which produces a new `Message`.
 
 #[derive(Clone)]
 pub struct Message(pub(crate) Arc<Inner>);
