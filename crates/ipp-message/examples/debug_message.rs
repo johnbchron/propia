@@ -30,9 +30,26 @@ fn assemble(mut input: impl Read) -> io::Result<Assembled> {
   }
 }
 
+fn commas(n: usize) -> String {
+  let s = n.to_string();
+  let mut out = String::with_capacity(s.len() + s.len() / 3);
+  for (i, c) in s.chars().enumerate() {
+    if i > 0 && (s.len() - i) % 3 == 0 {
+      out.push(',');
+    }
+    out.push(c);
+  }
+  out
+}
+
 fn main() -> io::Result<()> {
   let Assembled { message, rest, end } = assemble(io::stdin().lock())?;
   eprintln!("end state: {end:?}, trailing bytes: {}", rest.len());
+  eprintln!(
+    "total bytes: {} bytes, total tokens: {} tokens",
+    commas(message.chunks().map(|c| c.len()).sum::<usize>()),
+    commas(message.tokens().len())
+  );
 
   println!("{message:+#?}");
   Ok(())
