@@ -11,4 +11,6 @@ mod diagnostic;
 pub mod edit;
 mod message;
 
+pub use ipp_wire;
+
 pub use self::{assembler::*, diagnostic::*, message::*};
