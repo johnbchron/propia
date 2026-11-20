@@ -12,11 +12,11 @@ use crate::span::Spanned;
 /// [`Decoder`](crate::Decoder), but it can also be used further up the stack to
 /// re-read over message data and collect spans into attribute values.
 pub struct Cursor<'a> {
-  buf:  &'a [u8],
+  buf: &'a [u8],
   /// the byte offset of the start of this buffer
   base: u32,
   /// position within the current buffer
-  pos:  u32,
+  pos: u32,
 }
 
 /// A mark, or fencepost, that can be arbitrarily used as the start of a
@@ -45,11 +45,15 @@ impl<'a> Cursor<'a> {
 
   /// The current absolute offset (across buffers).
   #[must_use]
-  pub fn offset(&self) -> u32 { self.base + self.pos }
+  pub fn offset(&self) -> u32 {
+    self.base + self.pos
+  }
 
   /// The position within the current buffer.
   #[must_use]
-  pub fn pos(&self) -> u32 { self.pos }
+  pub fn pos(&self) -> u32 {
+    self.pos
+  }
 
   /// The bytes remaining in the buffer.
   #[allow(clippy::missing_panics_doc)]
@@ -111,7 +115,9 @@ impl<'a> Cursor<'a> {
 
   /// Creates a [`CursorMark`] (fencepost) at the current offset.
   #[must_use]
-  pub fn mark(&self) -> CursorMark { CursorMark(self.offset()) }
+  pub fn mark(&self) -> CursorMark {
+    CursorMark(self.offset())
+  }
 
   /// Returns the span from the given mark until now.
   #[must_use]

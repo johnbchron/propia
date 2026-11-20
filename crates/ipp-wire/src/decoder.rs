@@ -12,7 +12,7 @@ pub enum Step<'a> {
   /// first `consumed` bytes.
   Token {
     /// The yielded [`DecodedToken`](crate::DecodedToken).
-    token:    DecodedTokenRef<'a>,
+    token: DecodedTokenRef<'a>,
     /// The number of bytes consumed, which should be excluded from the next
     /// call.
     consumed: u32,
@@ -66,7 +66,7 @@ pub enum Step<'a> {
 /// within a token or for a 0-length message, or
 /// [`DecodeErrorKind::NoEndOfAttributes`] at a token boundary.
 pub struct Decoder {
-  state:  State,
+  state: State,
   offset: u32,
 }
 
@@ -79,7 +79,9 @@ enum State {
 }
 
 impl Default for Decoder {
-  fn default() -> Self { Self::new() }
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl Decoder {
@@ -87,7 +89,7 @@ impl Decoder {
   #[must_use]
   pub fn new() -> Self {
     Self {
-      state:  State::Header,
+      state: State::Header,
       offset: 0,
     }
   }
@@ -95,7 +97,9 @@ impl Decoder {
   /// Returns the absolute offset the decoder is at, i.e. the total number of
   /// bytes it has reported `consumed`.
   #[must_use]
-  pub fn offset(&self) -> u32 { self.offset }
+  pub fn offset(&self) -> u32 {
+    self.offset
+  }
 
   /// Runs the decoder on a chunk of data. See the docs on [`Decoder`] for
   /// instructions.
@@ -114,10 +118,10 @@ impl Decoder {
     let mut cur = Cursor::new(buf, self.offset).ok_or_else(|| {
       self.state = State::Failed;
       DecodeError {
-        offset:  self.offset,
+        offset: self.offset,
         message: "total size of buffers passed exceeded 4 GiB before message \
                   attribute data concluded.",
-        kind:    DecodeErrorKind::OffsetOverflow,
+        kind: DecodeErrorKind::OffsetOverflow,
       }
     })?;
 
@@ -166,11 +170,11 @@ enum Stall {
 fn need(cur: &Cursor, n: u32, message: &'static str) -> Stall {
   Stall::Incomplete {
     min_len: cur.pos() + n,
-    at_eof:  DecodeError {
+    at_eof: DecodeError {
       offset: cur.offset(),
       message,
       kind: crate::DecodeErrorKind::Truncated {
-        needed:    n,
+        needed: n,
         available: cur.remaining(),
       },
     },

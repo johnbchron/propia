@@ -7,7 +7,7 @@ pub struct Diagnostic {
   /// The token the diagnostic occurred at.
   pub token: u32,
   /// The kind of diagnostic that occurred.
-  pub kind:  Kind,
+  pub kind: Kind,
 }
 
 impl fmt::Display for Diagnostic {

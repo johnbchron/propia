@@ -66,5 +66,5 @@ impl Buffer {
 #[derive(Clone)]
 pub(crate) struct Segment {
   offset: u32,
-  bytes:  Bytes,
+  bytes: Bytes,
 }

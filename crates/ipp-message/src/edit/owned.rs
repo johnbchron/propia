@@ -81,7 +81,7 @@ impl Value {
 /// [`Message`](crate::Message)s.
 #[derive(Clone, Debug)]
 pub struct Attr {
-  name:   Bytes,
+  name: Bytes,
   values: Vec<Value>,
 }
 
@@ -89,7 +89,7 @@ impl Attr {
   /// Builds an IPP Attribute.
   pub fn new(name: impl Into<Bytes>, first: Value) -> Self {
     Self {
-      name:   name.into(),
+      name: name.into(),
       values: vec![first],
     }
   }
@@ -130,7 +130,7 @@ impl Attr {
 /// [`Message`](crate::Message)s.
 #[derive(Clone, Debug)]
 pub struct Group {
-  tag:   DelimiterTag,
+  tag: DelimiterTag,
   attrs: Vec<Attr>,
 }
 

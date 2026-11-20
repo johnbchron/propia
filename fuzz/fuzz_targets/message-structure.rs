@@ -120,7 +120,7 @@ fn assert_compliant_value(value: ValueRef<'_>) {
   if value.is_collection() {
     let collection_range = Range {
       start: value_range.start + 1,
-      end:   value_range.end,
+      end: value_range.end,
     };
 
     for member in value.members() {

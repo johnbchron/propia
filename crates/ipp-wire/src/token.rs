@@ -27,15 +27,15 @@ pub enum DecodedToken<B> {
   /// the message.
   Header {
     /// The outer span, containing the whole header.
-    span:                Span,
+    span: Span,
     /// The `version-number`, as described in Section 3.1.1 of the RFC. Version
     /// is `(major, minor)`.
-    version:             (Spanned<u8>, Spanned<u8>),
+    version: (Spanned<u8>, Spanned<u8>),
     /// The `operation-id` or `status-code`, as described in Section 3.1.1 of
     /// the RFC.
     operation_or_status: Spanned<u16>,
     /// The `request-id`, as described in Section 3.1.1 of the RFC.
-    request_id:          Spanned<u32>,
+    request_id: Spanned<u32>,
   },
   /// A delimiter tag token, containing just a single byte which delimits some
   /// state change within the message. Described by Section 3.5.1 of the RFC.
@@ -51,22 +51,22 @@ pub enum DecodedToken<B> {
   /// `attribute-with-one-value`.
   Value {
     /// The outer span, containing the whole attribute value.
-    span:                Span,
+    span: Span,
     /// The value tag delimiting this attribute value, as described by Sections
     /// 3.1.4, 3.1.5, and 3.5.2 of the RFC.
-    tag:                 Spanned<ValueTag>,
+    tag: Spanned<ValueTag>,
     /// If the value tag is `0x7F`, indicating that the type is an extension
     /// type found in the first 4 bytes of the value, this is that span.
     extension_type_span: Option<Span>,
     /// The name field of the attribute value, as described by Section 3.7 of
     /// the RFC.
-    name:                Spanned<B>,
+    name: Spanned<B>,
     /// The value field of the attribute value, as described by Section 3.9 of
     /// the RFC. If the value tag is a `0x7F`, the first 4 bytes that come in
     /// over the wire for this field are the extension type, and they're
     /// excluded from this field during decoding. They're added back during
     /// encoding.
-    value:               Spanned<B>,
+    value: Spanned<B>,
   },
   /// This token represents the data portion of the IPP message, as described by
   /// Section 3.10 of the RFC. Currently, it's only ever emitted by
@@ -138,16 +138,16 @@ impl<B> DecodedToken<B> {
         request_id,
         ..
       } => Token::Header {
-        version:             (version.0.value, version.1.value),
+        version: (version.0.value, version.1.value),
         operation_or_status: operation_or_status.value,
-        request_id:          request_id.value,
+        request_id: request_id.value,
       },
       DecodedToken::Delimiter { tag } => Token::Delimiter { tag: tag.value },
       DecodedToken::Value {
         tag, name, value, ..
       } => Token::Value {
-        tag:   tag.value,
-        name:  name.value,
+        tag: tag.value,
+        name: name.value,
         value: value.value,
       },
       DecodedToken::Data { data } => Token::Data { data: data.value },
@@ -164,7 +164,9 @@ pub type DecodedTokenIdx = DecodedToken<()>;
 impl DecodedTokenRef<'_> {
   /// Converts a [`DecodedTokenRef`] to a [`DecodedTokenIdx`].
   #[must_use]
-  pub fn detach(self) -> DecodedTokenIdx { self.map_generic(|s| s.map(|_| ())) }
+  pub fn detach(self) -> DecodedTokenIdx {
+    self.map_generic(|s| s.map(|_| ()))
+  }
 }
 
 impl DecodedTokenIdx {
@@ -175,7 +177,7 @@ impl DecodedTokenIdx {
   pub fn attach(self, buf: &[u8]) -> DecodedTokenRef<'_> {
     self.map_generic(|s| Spanned {
       value: &buf[s.span.start as usize..s.span.end as usize],
-      span:  s.span,
+      span: s.span,
     })
   }
 }
@@ -203,12 +205,12 @@ pub enum Token<B> {
   Header {
     /// The `version-number`, as described in Section 3.1.1 of the RFC. Version
     /// is `(major, minor)`.
-    version:             (u8, u8),
+    version: (u8, u8),
     /// The `operation-id` or `status-code`, as described in Section 3.1.1 of
     /// the RFC.
     operation_or_status: u16,
     /// The `request-id`, as described in Section 3.1.1 of the RFC.
-    request_id:          u32,
+    request_id: u32,
   },
   /// A delimiter tag token, containing just a single byte which delimits some
   /// state change within the message. Described by Section 3.5.1 of the RFC.
@@ -225,10 +227,10 @@ pub enum Token<B> {
   Value {
     /// The value tag delimiting this attribute value, as described by Sections
     /// 3.1.4, 3.1.5, and 3.5.2 of the RFC.
-    tag:   ValueTag,
+    tag: ValueTag,
     /// The name field of the attribute value, as described by Section 3.7 of
     /// the RFC.
-    name:  B,
+    name: B,
     /// The value field of the attribute value, as described by Section 3.9 of
     /// the RFC. If the value tag is a `0x7F`, the first 4 bytes that come in
     /// over the wire for this field are the extension type, and they're

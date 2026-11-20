@@ -92,15 +92,15 @@ use crate::{Message, buffer::Buffer};
 /// ```
 pub struct Assembler {
   decoder: Decoder,
-  buf:     BytesMut,
+  buf: BytesMut,
   /// Position of the decoder (tokens already decoded).
-  pos:     usize,
+  pos: usize,
   /// Last wanted by the decoder.
-  wanted:  usize,
+  wanted: usize,
   /// Decoded tokens.
-  tokens:  Vec<DecodedTokenIdx>,
+  tokens: Vec<DecodedTokenIdx>,
   /// User-defined limits for message assembling.
-  limits:  Limits,
+  limits: Limits,
 }
 
 impl Assembler {
@@ -212,7 +212,7 @@ impl Assembler {
 #[derive(Clone, Debug)]
 pub struct Limits {
   /// The maximum number of bytes allowed in a message's attribute data.
-  pub max_bytes:  u32,
+  pub max_bytes: u32,
   /// The maximum number of tokens allowed in a message's attribute data.
   pub max_tokens: u32,
 }
@@ -220,7 +220,7 @@ pub struct Limits {
 impl Default for Limits {
   fn default() -> Self {
     Self {
-      max_bytes:  1 << 22, // 4 MiB of attribute data
+      max_bytes: 1 << 22,  // 4 MiB of attribute data
       max_tokens: 1 << 16, // 65,536 tokens
     }
   }
@@ -231,7 +231,7 @@ impl Limits {
   #[must_use]
   pub fn unbounded() -> Self {
     Self {
-      max_bytes:  u32::MAX,
+      max_bytes: u32::MAX,
       max_tokens: u32::MAX,
     }
   }
@@ -254,9 +254,9 @@ pub struct Assembled {
   /// The assembled message.
   pub message: Message,
   /// All ingested bytes following the last token.
-  pub rest:    Bytes,
+  pub rest: Bytes,
   /// The ending state of the Assembler.
-  pub end:     EndState,
+  pub end: EndState,
 }
 
 /// Describes the end state of [`Message`] assembly, which is an infalliable

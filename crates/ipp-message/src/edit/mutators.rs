@@ -8,7 +8,9 @@ use crate::{AttrRef, GroupRef, Header, ValueRef};
 
 impl<'m> Edit<'m> {
   /// Overwrites the header (or sets if not present).
-  pub fn set_header(&mut self, header: Header) { self.header = Some(header); }
+  pub fn set_header(&mut self, header: Header) {
+    self.header = Some(header);
+  }
 
   /// Add a new attribute group to the message.
   #[allow(clippy::missing_panics_doc)]
@@ -36,7 +38,7 @@ impl<'m> Edit<'m> {
   pub fn insert_group_before(&mut self, anchor: GroupRef<'m>, group: Group) {
     self.check(anchor.msg);
     self.inserts.push(Insert {
-      pos:     anchor.row.tokens.start,
+      pos: anchor.row.tokens.start,
       payload: Payload::Group(group),
     });
   }
@@ -51,7 +53,7 @@ impl<'m> Edit<'m> {
   pub fn push_attr(&mut self, group: GroupRef<'m>, attr: Attr) {
     self.check(group.msg);
     self.inserts.push(Insert {
-      pos:     group.row.tokens.end,
+      pos: group.row.tokens.end,
       payload: Payload::Top(attr),
     });
   }

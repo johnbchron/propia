@@ -14,7 +14,7 @@ use libfuzzer_sys::fuzz_target;
 struct Input {
   header: ((u8, u8), u16, u32),
   middle: Vec<Token<Vec<u8>>>,
-  data:   Vec<u8>,
+  data: Vec<u8>,
 }
 
 fuzz_target!(|input: Input| {
@@ -27,9 +27,9 @@ fuzz_target!(|input: Input| {
   let mut accepted_input_tokens = Vec::with_capacity(input.middle.len());
 
   let header = Token::<Vec<u8>>::Header {
-    version:             input.header.0,
+    version: input.header.0,
     operation_or_status: input.header.1,
-    request_id:          input.header.2,
+    request_id: input.header.2,
   };
   encode_token_to_vec(&header, &mut out).expect("header encoding failed");
   accepted_input_tokens.push(header);

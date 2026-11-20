@@ -181,10 +181,10 @@ impl Message {
 pub(crate) struct Inner {
   pub(crate) buffer: Buffer,
   pub(crate) tokens: Box<[DecodedTokenIdx]>,
-  groups:            Box<[GroupRow]>,
-  pub(crate) attrs:  Box<[AttrRow]>,
+  groups: Box<[GroupRow]>,
+  pub(crate) attrs: Box<[AttrRow]>,
   pub(crate) values: Box<[ValueRow]>,
-  diagnostics:       Box<[Diagnostic]>,
+  diagnostics: Box<[Diagnostic]>,
 }
 
 #[derive(Clone, Copy)]
@@ -198,7 +198,7 @@ pub(crate) struct ValueIdx(pub(crate) u32);
 
 pub(crate) struct GroupRow {
   pub(crate) tokens: Range<u32>,
-  attrs:             Box<[AttrIdx]>,
+  attrs: Box<[AttrIdx]>,
 }
 
 pub(crate) struct AttrRow {
@@ -207,21 +207,21 @@ pub(crate) struct AttrRow {
 }
 
 pub(crate) struct ValueRow {
-  pub(crate) tokens:  Range<u32>,
+  pub(crate) tokens: Range<u32>,
   pub(crate) members: Box<[AttrIdx]>,
 }
 
 #[derive(Default)]
 struct Builder {
-  groups:      Vec<GroupRow>,
-  attrs:       Vec<AttrRow>,
-  values:      Vec<ValueRow>,
+  groups: Vec<GroupRow>,
+  attrs: Vec<AttrRow>,
+  values: Vec<ValueRow>,
   diagnostics: Vec<Diagnostic>,
 
   /// The current open group.
   group: Option<OpenGroup>,
   /// The innermost open attribute.
-  attr:  Option<OpenAttr>,
+  attr: Option<OpenAttr>,
   /// Currently open attributes.
   stack: Vec<Frame>,
 }
@@ -363,7 +363,7 @@ impl Builder {
     );
     self.groups.push(GroupRow {
       tokens: Range { start: i, end: i },
-      attrs:  Box::default(),
+      attrs: Box::default(),
     });
 
     // set it as the current open group
@@ -435,9 +435,9 @@ impl Builder {
       u32::try_from(self.values.len()).expect("tokens are len-checked"),
     );
     self.values.push(ValueRow {
-      tokens:  Range {
+      tokens: Range {
         start: i,
-        end:   i + 1,
+        end: i + 1,
       },
       members: Box::default(),
     });
@@ -446,20 +446,20 @@ impl Builder {
 }
 
 struct OpenGroup {
-  row:   GroupIdx,
+  row: GroupIdx,
   attrs: Vec<AttrIdx>,
 }
 
 struct OpenAttr {
-  row:    AttrIdx,
+  row: AttrIdx,
   values: Vec<ValueIdx>,
 }
 
 struct Frame {
   /// The value row of the open collection
-  value:   ValueIdx,
+  value: ValueIdx,
   /// The attribute to resume after the collection value closes
-  outer:   OpenAttr,
+  outer: OpenAttr,
   /// Members of the collection so far
   members: Vec<AttrIdx>,
 }

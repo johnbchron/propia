@@ -9,10 +9,10 @@ use crate::{
 /// A convenience iterator on top of [`Decoder`] for circumstances when you have
 /// a slice over the entire input data.
 pub struct DecodeIterator<'a> {
-  input:   &'a [u8],
-  pos:     u32,
+  input: &'a [u8],
+  pos: u32,
   decoder: Decoder,
-  done:    bool,
+  done: bool,
 }
 
 impl<'a> DecodeIterator<'a> {

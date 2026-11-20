@@ -10,17 +10,19 @@ use crate::Diagnostic;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Header {
   /// The version, as `(major, minor)`.
-  pub version:             (u8, u8),
+  pub version: (u8, u8),
   /// The operation of a request or the status of a response.
   pub operation_or_status: u16,
   /// The request ID.
-  pub request_id:          u32,
+  pub request_id: u32,
 }
 
 impl Message {
   /// Returns the slice of tokens this message was produced from.
   #[must_use]
-  pub fn tokens(&self) -> &[DecodedTokenIdx] { &self.0.tokens }
+  pub fn tokens(&self) -> &[DecodedTokenIdx] {
+    &self.0.tokens
+  }
 
   /// Returns the header, unless the message was truncated before it finished.
   #[must_use]
@@ -32,9 +34,9 @@ impl Message {
         request_id,
         ..
       } => Some(Header {
-        version:             (version.0.value, version.1.value),
+        version: (version.0.value, version.1.value),
         operation_or_status: operation_or_status.value,
-        request_id:          request_id.value,
+        request_id: request_id.value,
       }),
       _ => None,
     }
@@ -57,7 +59,9 @@ impl Message {
 
   /// Returns the problems found while structuring the message.
   #[must_use]
-  pub fn diagnostics(&self) -> &[Diagnostic] { &self.0.diagnostics }
+  pub fn diagnostics(&self) -> &[Diagnostic] {
+    &self.0.diagnostics
+  }
 
   /// Iterates over the bytes of the message as contiguous slices.
   #[allow(clippy::missing_panics_doc)]
@@ -82,8 +86,8 @@ impl Message {
 
 /// An isolated [`DecodedTokenIdx::Value`](ipp_wire::DecodedTokenIdx::Value).
 pub(crate) struct ValueToken {
-  pub(crate) tag:   ValueTag,
-  pub(crate) name:  Span,
+  pub(crate) tag: ValueTag,
+  pub(crate) name: Span,
   pub(crate) value: Span,
 }
 
@@ -95,8 +99,8 @@ impl Inner {
       DecodedToken::Value {
         tag, name, value, ..
       } => ValueToken {
-        tag:   tag.value,
-        name:  name.span,
+        tag: tag.value,
+        name: name.span,
         value: value.span,
       },
       _ => panic!("value_token() was called on a token that was not a value"),
@@ -120,8 +124,8 @@ impl Inner {
   /// Iterates over the merged byte spans of a token range.
   fn spans(&self, start: u32, end: u32) -> Spans<'_> {
     Spans {
-      msg:     self,
-      tokens:  self.tokens[start as usize..end as usize].iter(),
+      msg: self,
+      tokens: self.tokens[start as usize..end as usize].iter(),
       pending: None,
     }
   }
@@ -132,8 +136,8 @@ impl Inner {
 /// An edited message keeps its tokens in several segments, so a range of tokens
 /// isn't one span of bytes.
 pub struct Spans<'m> {
-  msg:     &'m Inner,
-  tokens:  slice::Iter<'m, DecodedTokenIdx>,
+  msg: &'m Inner,
+  tokens: slice::Iter<'m, DecodedTokenIdx>,
   pending: Option<Span>,
 }
 
@@ -173,7 +177,9 @@ pub struct GroupRef<'m> {
 impl<'m> GroupRef<'m> {
   /// Returns the range of tokens this group covers.
   #[must_use]
-  pub fn tokens(self) -> Range<u32> { self.row.tokens }
+  pub fn tokens(self) -> Range<u32> {
+    self.row.tokens
+  }
 
   /// Returns the group's tag. An implicit group, opened by an attribute with no
   /// preceding delimiter, has no tag.
@@ -215,7 +221,9 @@ pub struct AttrRef<'m> {
 impl<'m> AttrRef<'m> {
   /// Returns the range of tokens this attribute covers.
   #[must_use]
-  pub fn tokens(self) -> Range<u32> { self.row.tokens }
+  pub fn tokens(self) -> Range<u32> {
+    self.row.tokens
+  }
 
   /// Returns the attribute's name.
   #[must_use]
@@ -255,7 +263,9 @@ pub struct ValueRef<'m> {
 impl<'m> ValueRef<'m> {
   /// Returns the range of tokens this attribute covers.
   #[must_use]
-  pub fn tokens(self) -> Range<u32> { self.row.tokens }
+  pub fn tokens(self) -> Range<u32> {
+    self.row.tokens
+  }
 
   /// Returns the value's tag.
   #[must_use]
@@ -272,7 +282,9 @@ impl<'m> ValueRef<'m> {
 
   /// Indicates whether this value is a collection, which may be empty.
   #[must_use]
-  pub fn is_collection(self) -> bool { self.tag() == ValueTag::BEG_COLLECTION }
+  pub fn is_collection(self) -> bool {
+    self.tag() == ValueTag::BEG_COLLECTION
+  }
 
   /// Iterates through a collection's members. This iterator is empty if not the
   /// value is not a collection.

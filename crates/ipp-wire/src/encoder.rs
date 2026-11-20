@@ -221,30 +221,30 @@ pub fn encode_token_to_vec_spanned<B: AsRef<[u8]>>(
       operation_or_status,
       request_id,
     } => DecodedToken::Header {
-      span:                at(0, 8),
-      version:             (
+      span: at(0, 8),
+      version: (
         Spanned {
           value: version.0,
-          span:  at(0, 1),
+          span: at(0, 1),
         },
         Spanned {
           value: version.1,
-          span:  at(1, 1),
+          span: at(1, 1),
         },
       ),
       operation_or_status: Spanned {
         value: *operation_or_status,
-        span:  at(2, 2),
+        span: at(2, 2),
       },
-      request_id:          Spanned {
+      request_id: Spanned {
         value: *request_id,
-        span:  at(4, 4),
+        span: at(4, 4),
       },
     },
     Token::Delimiter { tag } => DecodedToken::Delimiter {
       tag: Spanned {
         value: *tag,
-        span:  at(0, 1),
+        span: at(0, 1),
       },
     },
     Token::Value { tag, name, value } => {
@@ -261,7 +261,7 @@ pub fn encode_token_to_vec_spanned<B: AsRef<[u8]>>(
         span: at(0, pos + value_len),
         tag: Spanned {
           value: *tag,
-          span:  at(0, 1),
+          span: at(0, 1),
         },
         extension_type_span,
         name: val(at(3, name_len)),

@@ -7,8 +7,8 @@ use ipp_wire::{DecodeError, DecodeIterator, DecodedTokenRef, Decoder, Step};
 use libfuzzer_sys::fuzz_target;
 
 struct Outcome<'a> {
-  tokens:     Vec<DecodedTokenRef<'a>>,
-  error:      Option<DecodeError>,
+  tokens: Vec<DecodedTokenRef<'a>>,
+  error: Option<DecodeError>,
   body_start: Option<u32>,
 }
 
@@ -57,8 +57,8 @@ fn stream(data: &[u8], exact: bool) -> Outcome<'_> {
 
 fuzz_target!(|data: &[u8]| {
   let mut expected = Outcome {
-    tokens:     vec![],
-    error:      None,
+    tokens: vec![],
+    error: None,
     body_start: None,
   };
 

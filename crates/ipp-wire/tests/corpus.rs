@@ -16,27 +16,27 @@ fn golden_decode_1() {
 
   let expected_tokens: Vec<Token<&[u8]>> = vec![
     Token::Header {
-      version:             (0x01, 0x01),
+      version: (0x01, 0x01),
       operation_or_status: 0x0002,
-      request_id:          0x0001,
+      request_id: 0x0001,
     },
     // operation attributes group
     Token::Delimiter {
       tag: DelimiterTag::OPERATION_ATTRIBUTES_TAG,
     },
     Token::Value {
-      tag:   ValueTag::Standard(0x47),
-      name:  b"attributes-charset",
+      tag: ValueTag::Standard(0x47),
+      name: b"attributes-charset",
       value: b"utf-8",
     },
     Token::Value {
-      tag:   ValueTag::Standard(0x48),
-      name:  b"attributes-natural-language",
+      tag: ValueTag::Standard(0x48),
+      name: b"attributes-natural-language",
       value: b"en",
     },
     Token::Value {
-      tag:   ValueTag::Standard(0x45),
-      name:  b"printer-uri",
+      tag: ValueTag::Standard(0x45),
+      name: b"printer-uri",
       value: b"ipp://localhost/printers/foo",
     },
     // job attributes group
@@ -45,158 +45,158 @@ fn golden_decode_1() {
     },
     // start the media-col collection
     Token::Value {
-      tag:   ValueTag::BEG_COLLECTION,
-      name:  b"media-col",
+      tag: ValueTag::BEG_COLLECTION,
+      name: b"media-col",
       value: b"",
     },
     // media-col.media-size
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"media-size",
     },
     // media-col.media-size is a collection
     Token::Value {
-      tag:   ValueTag::BEG_COLLECTION,
-      name:  b"",
+      tag: ValueTag::BEG_COLLECTION,
+      name: b"",
       value: b"",
     },
     // media-col.media-size.x-dimension
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"x-dimension",
     },
     // media-col.media-size.x-dimension is an integer
     Token::Value {
-      tag:   ValueTag::INTEGER,
-      name:  b"",
+      tag: ValueTag::INTEGER,
+      name: b"",
       value: X1,
     },
     // media-col.media-size.y-dimension
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"y-dimension",
     },
     // media-col.media-size.y-dimension is an integer
     Token::Value {
-      tag:   ValueTag::INTEGER,
-      name:  b"",
+      tag: ValueTag::INTEGER,
+      name: b"",
       value: Y1,
     },
     // end of media-col.media-size
     Token::Value {
-      tag:   ValueTag::END_COLLECTION,
-      name:  b"",
+      tag: ValueTag::END_COLLECTION,
+      name: b"",
       value: b"",
     },
     // media-col.media-color
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"media-color",
     },
     // media-col.media-color is a keyword
     Token::Value {
-      tag:   ValueTag::KEYWORD,
-      name:  b"",
+      tag: ValueTag::KEYWORD,
+      name: b"",
       value: b"blue",
     },
     // media-col.media-type
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"media-type",
     },
     // media-col.media-type is a keyword
     Token::Value {
-      tag:   ValueTag::KEYWORD,
-      name:  b"",
+      tag: ValueTag::KEYWORD,
+      name: b"",
       value: b"plain",
     },
     // end of media-col
     Token::Value {
-      tag:   ValueTag::END_COLLECTION,
-      name:  b"",
+      tag: ValueTag::END_COLLECTION,
+      name: b"",
       value: b"",
     },
     // media-col[1]
     Token::Value {
-      tag:   ValueTag::BEG_COLLECTION,
-      name:  b"",
+      tag: ValueTag::BEG_COLLECTION,
+      name: b"",
       value: b"",
     },
     // media-col[1].media-size
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"media-size",
     },
     // media-col[1].media-size is a collection
     Token::Value {
-      tag:   ValueTag::BEG_COLLECTION,
-      name:  b"",
+      tag: ValueTag::BEG_COLLECTION,
+      name: b"",
       value: b"",
     },
     // media-col[1].media-size.x-dimension
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"x-dimension",
     },
     // media-col[1].media-size.x-dimension is an integer
     Token::Value {
-      tag:   ValueTag::INTEGER,
-      name:  b"",
+      tag: ValueTag::INTEGER,
+      name: b"",
       value: X2,
     },
     // media-col[1].media-size.y-dimension
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"y-dimension",
     },
     // media-col[1].media-size.y-dimension is an integer
     Token::Value {
-      tag:   ValueTag::INTEGER,
-      name:  b"",
+      tag: ValueTag::INTEGER,
+      name: b"",
       value: Y2,
     },
     // end of media-col[1].media-size
     Token::Value {
-      tag:   ValueTag::END_COLLECTION,
-      name:  b"",
+      tag: ValueTag::END_COLLECTION,
+      name: b"",
       value: b"",
     },
     // media-col[1].media-color
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"media-color",
     },
     // media-col[1].media-color is a keyword
     Token::Value {
-      tag:   ValueTag::KEYWORD,
-      name:  b"",
+      tag: ValueTag::KEYWORD,
+      name: b"",
       value: b"plaid",
     },
     // media-col[1].media-type
     Token::Value {
-      tag:   ValueTag::MEMBER_ATTR_NAME,
-      name:  b"",
+      tag: ValueTag::MEMBER_ATTR_NAME,
+      name: b"",
       value: b"media-type",
     },
     // media-col[1].media-type is a keyword
     Token::Value {
-      tag:   ValueTag::KEYWORD,
-      name:  b"",
+      tag: ValueTag::KEYWORD,
+      name: b"",
       value: b"glossy",
     },
     // end of media-col[1]
     Token::Value {
-      tag:   ValueTag::END_COLLECTION,
-      name:  b"",
+      tag: ValueTag::END_COLLECTION,
+      name: b"",
       value: b"",
     },
     // end of all attribute groups
@@ -222,21 +222,21 @@ fn golden_decode_2() {
 
   let expected_tokens: Vec<Token<&[u8]>> = vec![
     Token::Header {
-      version:             (0x01, 0x01),
+      version: (0x01, 0x01),
       operation_or_status: 0x0002,
-      request_id:          0x0001,
+      request_id: 0x0001,
     },
     Token::Delimiter {
       tag: DelimiterTag::OPERATION_ATTRIBUTES_TAG,
     },
     Token::Value {
-      tag:   ValueTag::Standard(0x21),
-      name:  b"notify-lease-duration-supported",
+      tag: ValueTag::Standard(0x21),
+      name: b"notify-lease-duration-supported",
       value: b"\x00\x00\x00\x01",
     },
     Token::Value {
-      tag:   ValueTag::Standard(0x33),
-      name:  b"",
+      tag: ValueTag::Standard(0x33),
+      name: b"",
       value: b"\x00\x00\x00\x10\x00\x00\x00\x20",
     },
     Token::Delimiter {

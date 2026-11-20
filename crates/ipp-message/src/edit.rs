@@ -44,7 +44,9 @@ pub enum EditError {
 }
 
 impl From<EncodeError> for EditError {
-  fn from(e: EncodeError) -> Self { Self::Encode(e) }
+  fn from(e: EncodeError) -> Self {
+    Self::Encode(e)
+  }
 }
 
 /// What happens to one value of the base message.
@@ -57,13 +59,13 @@ enum Fate {
 /// All changes to one attribute.
 struct AttrEdit<'m> {
   /// The attribute in the original message being edited.
-  attr:    AttrRef<'m>,
+  attr: AttrRef<'m>,
   /// The set name of the attribute.
-  name:    Option<Bytes>,
+  name: Option<Bytes>,
   /// The fate of every original value, whether kept, dropped, or replaced.
-  fates:   Vec<Fate>,
+  fates: Vec<Fate>,
   /// Values pushed to this attribute (pushed values go at the end).
-  pushed:  Vec<Value>,
+  pushed: Vec<Value>,
   /// Whether the attribute was removed.
   removed: bool,
 }
@@ -84,7 +86,7 @@ enum Payload {
 }
 
 struct Insert {
-  pos:     u32,
+  pos: u32,
   payload: Payload,
 }
 
@@ -92,12 +94,12 @@ struct Insert {
 /// splice is an insertion before base token `start`.
 struct Splice {
   start: u32,
-  end:   u32,
+  end: u32,
   /// For an insert, what it adds. For a replacement, what it takes out; a
   /// replacement of part of a value or attribute (such as the token carrying
   /// a name) counts as a value, which owns nothing at its end.
-  rank:  Rank,
-  run:   Run,
+  rank: Rank,
+  run: Run,
 }
 
 impl Splice {
@@ -120,7 +122,9 @@ impl Splice {
     }
   }
 
-  fn is_insert(&self) -> bool { self.start == self.end }
+  fn is_insert(&self) -> bool {
+    self.start == self.end
+  }
 }
 
 /// A builder for a round of edits to a [`Message`].
@@ -238,22 +242,22 @@ impl Splice {
 /// [`set_header`]: Edit::set_header
 #[must_use = "edits are inert until committed"]
 pub struct Edit<'m> {
-  msg:            &'m Message,
-  header:         Option<Header>,
-  attr_edits:     BTreeMap<u32, AttrEdit<'m>>,
+  msg: &'m Message,
+  header: Option<Header>,
+  attr_edits: BTreeMap<u32, AttrEdit<'m>>,
   group_removals: Vec<GroupRef<'m>>,
-  inserts:        Vec<Insert>,
+  inserts: Vec<Insert>,
 }
 
 impl Message {
   /// Start a batch of edits against this message.
   pub fn edit(&self) -> Edit<'_> {
     Edit {
-      msg:            self,
-      header:         None,
-      attr_edits:     BTreeMap::new(),
+      msg: self,
+      header: None,
+      attr_edits: BTreeMap::new(),
       group_removals: Vec::new(),
-      inserts:        Vec::new(),
+      inserts: Vec::new(),
     }
   }
 }
@@ -343,9 +347,9 @@ impl<'m> Edit<'m> {
     // the header always comes first
     if let Some(h) = self.header {
       let header = Token::<&[u8]>::Header {
-        version:             h.version,
+        version: h.version,
         operation_or_status: h.operation_or_status,
-        request_id:          h.request_id,
+        request_id: h.request_id,
       };
       tokens.push(encode_token_to_vec_spanned(&header, base, &mut fresh)?);
       pos = u32::from(!msg.tokens.is_empty());
@@ -429,11 +433,12 @@ impl AttrEdit<'_> {
     let headed = headed_attribute(self.attr);
     if renamed && !headed {
       let start = row.tokens.start;
-      out.push(Splice::replace(start, start + 1, Rank::Value, vec![tok(
-        ValueTag::MEMBER_ATTR_NAME,
-        Bytes::new(),
-        name.clone(),
-      )]));
+      out.push(Splice::replace(
+        start,
+        start + 1,
+        Rank::Value,
+        vec![tok(ValueTag::MEMBER_ATTR_NAME, Bytes::new(), name.clone())],
+      ));
     }
 
     // prepare to set the name on the value if not a member attribute
@@ -460,9 +465,12 @@ impl AttrEdit<'_> {
           let token = msg.value_token(t.start);
           if msg.buffer.slice(token.name) != &*wanted {
             let value = msg.buffer.slice(token.value);
-            out.push(Splice::replace(t.start, t.start + 1, Rank::Value, vec![
-              tok(token.tag, wanted, Bytes::copy_from_slice(value)),
-            ]));
+            out.push(Splice::replace(
+              t.start,
+              t.start + 1,
+              Rank::Value,
+              vec![tok(token.tag, wanted, Bytes::copy_from_slice(value))],
+            ));
           }
         }
         Fate::Drop => {

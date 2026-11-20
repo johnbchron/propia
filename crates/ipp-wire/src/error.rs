@@ -6,11 +6,11 @@ use crate::{DelimiterTag, ValueTag};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecodeError {
   /// The (absolute) byte offset the error occured at.
-  pub offset:  u32,
+  pub offset: u32,
   /// A human-readable message describing the error.
   pub message: &'static str,
   /// The variety of error encountered.
-  pub kind:    DecodeErrorKind,
+  pub kind: DecodeErrorKind,
 }
 
 impl Error for DecodeError {}
@@ -31,7 +31,7 @@ pub enum DecodeErrorKind {
   /// The document ended mid-token.
   Truncated {
     /// The size of the field being read when the buffer ran out.
-    needed:    u32,
+    needed: u32,
     /// The bytes available after the cursor.
     available: u32,
   },
@@ -74,7 +74,7 @@ pub enum EncodeError {
   /// The given slice is too small to encode the token.
   BufferTooSmall {
     /// The length needed to encode the whole token.
-    needed:    usize,
+    needed: usize,
     /// The length available in the mutable slice.
     available: usize,
   },
