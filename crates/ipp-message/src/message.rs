@@ -3,7 +3,11 @@ mod view;
 
 use std::{range::Range, sync::Arc};
 
-use ipp_wire::{DecodedToken, DecodedTokenIdx, DelimiterTag, ValueTag};
+use bytes::Bytes;
+use ipp_wire::{
+  DecodedToken, DecodedTokenIdx, DelimiterTag, Span, Spanned, ValueTag,
+  encode_token,
+};
 
 pub use self::view::*;
 use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
@@ -175,6 +179,70 @@ impl Message {
       crate::Progress::More(assembler) => assembler.finish(),
       crate::Progress::Done(assembled) => assembled,
     }
+  }
+
+  /// Creates a new `Message`, containing only a header and an
+  /// `end-of-attributes` tag terminating the message.
+  pub fn new(header: Header) -> Self {
+    // the output buffer
+    let mut buf = [0u8; 9];
+
+    // the tokens with manual spans
+    let tokens = [
+      DecodedToken::<Vec<u8>>::Header {
+        span: Span { start: 0, end: 8 },
+        version: (
+          Spanned {
+            value: header.version.0,
+            span: Span { start: 0, end: 1 },
+          },
+          Spanned {
+            value: header.version.1,
+            span: Span { start: 1, end: 2 },
+          },
+        ),
+        operation_or_status: Spanned {
+          value: header.operation_or_status,
+          span: Span { start: 2, end: 4 },
+        },
+        request_id: Spanned {
+          value: header.request_id,
+          span: Span { start: 4, end: 8 },
+        },
+      },
+      DecodedToken::<Vec<u8>>::Delimiter {
+        tag: Spanned {
+          value: DelimiterTag::END_OF_ATTRIBUTES_TAG,
+          span: Span { start: 8, end: 9 },
+        },
+      },
+    ];
+
+    // encodeable tokens
+    let header = tokens[0].clone().forget_spans();
+    let end_of_attributes = tokens[1].clone().forget_spans();
+
+    // set the output buffer. tokens can't be backed by () for encoding
+    encode_token(&header, &mut buf[..8]).expect("header should encode");
+    encode_token(&end_of_attributes, &mut buf[8..])
+      .expect("end of attributes should encode");
+
+    // back tokens with (), and collect into a boxed slice
+    let tokens = tokens
+      .into_iter()
+      .map(|dt| dt.map_generic(|sp| sp.map(|_| ())))
+      .collect::<Vec<_>>()
+      .into_boxed_slice();
+
+    // build the message
+    Message(Arc::new(Inner {
+      buffer: Buffer::new(Bytes::from_owner(buf)),
+      tokens,
+      groups: Box::new([]),
+      attrs: Box::new([]),
+      values: Box::new([]),
+      diagnostics: Box::new([]),
+    }))
   }
 }
 
