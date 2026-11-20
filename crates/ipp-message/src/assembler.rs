@@ -221,7 +221,7 @@ impl Default for Limits {
   fn default() -> Self {
     Self {
       max_bytes: 1 << 22,  // 4 MiB of attribute data
-      max_tokens: 1 << 16, // 65,536 tokens
+      max_tokens: 1 << 19, // 524,288 tokens
     }
   }
 }
