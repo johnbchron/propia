@@ -21,9 +21,9 @@
 
       inherit (pkgs) lib;
 
-      toolchain_fn = p: p.rust-bin.stable.latest.default.override {
+      toolchain_fn = p: p.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
         extensions = [ "rust-src" "rust-analyzer" ];
-      };
+      });
 
       craneLib = (crane.mkLib pkgs).overrideToolchain toolchain_fn;
       src = lib.fileset.toSource {
