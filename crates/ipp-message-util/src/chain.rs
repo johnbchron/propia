@@ -24,8 +24,8 @@ impl<S> fmt::Debug for Chain<S> {
 }
 
 impl<S> Chain<S> {
-  // Returns the length of this stream.
-  pub(crate) fn len(&self) -> Option<u64> {
+  // Returns the length remaining in this stream, if known.
+  pub(crate) fn remaining(&self) -> Option<u64> {
     let tail_len = match self.stream {
       Some(_) => self.tail_len?,
       None => 0,

@@ -58,10 +58,10 @@ impl<S> Outbound<S> {
     }))
   }
 
-  /// The total byte length of the outbound stream, if known.
+  /// The total byte length remaining in the outbound stream, if known.
   #[allow(clippy::len_without_is_empty)]
-  pub fn len(&self) -> Option<u64> {
-    self.0.len()
+  pub fn remaining(&self) -> Option<u64> {
+    self.0.remaining()
   }
 }
 
