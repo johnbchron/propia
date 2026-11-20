@@ -1,12 +1,8 @@
 //! Verifies structural invariants of an `ipp-message::Message`
 
-#![feature(range_into_bounds)]
 #![no_main]
 
-use std::{
-  ops::{Index, IntoBounds},
-  range::Range,
-};
+use std::{ops::Index, range::Range};
 
 use ipp_message::{
   Assembled, Assembler, AttrRef, GroupRef, Limits, Progress, ValueRef,
@@ -85,9 +81,10 @@ fn assert_compliant_group(group: GroupRef<'_>) {
 
   let group_range = group.tokens();
   for attr in group.attrs() {
-    assert_eq!(
-      group_range.intersect(attr.tokens()),
-      attr.tokens().into_bounds(),
+    let attr_range = attr.tokens();
+    assert!(
+      group_range.start <= attr_range.start
+        && attr_range.end <= group_range.end,
       "attribute is not fully contained by its group"
     );
 
@@ -102,9 +99,10 @@ fn assert_compliant_attr(attr: AttrRef<'_>) {
 
   let attr_range = attr.tokens();
   for value in attr.values() {
-    assert_eq!(
-      attr_range.intersect(value.tokens()),
-      value.tokens().into_bounds(),
+    let value_range = value.tokens();
+    assert!(
+      attr_range.start <= value_range.start
+        && value_range.end <= attr_range.end,
       "value is not fully contained by its attribute"
     );
 
@@ -126,9 +124,10 @@ fn assert_compliant_value(value: ValueRef<'_>) {
     };
 
     for member in value.members() {
-      assert_eq!(
-        collection_range.intersect(member.tokens()),
-        member.tokens().into_bounds(),
+      let member_range = member.tokens();
+      assert!(
+        collection_range.start <= member_range.start
+          && member_range.end <= collection_range.end,
         "member attribute is not fully contained by its collection"
       );
 

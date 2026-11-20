@@ -1,5 +1,3 @@
-#![feature(iterator_try_collect)]
-
 use ipp_wire::{DecodeIterator, DelimiterTag, Token, ValueTag};
 
 #[test]
@@ -13,9 +11,8 @@ fn golden_decode_1() {
 
   let tokens = DecodeIterator::new(BYTES)
     .unwrap()
-    .map(|r| r.map(|t| t.forget_spans()))
-    .try_collect::<Vec<_>>()
-    .expect("failed to decode tokens");
+    .map(|r| r.expect("failed to decode tokens").forget_spans())
+    .collect::<Vec<_>>();
 
   let expected_tokens: Vec<Token<&[u8]>> = vec![
     Token::Header {
@@ -220,9 +217,8 @@ fn golden_decode_2() {
 
   let tokens = DecodeIterator::new(BYTES)
     .unwrap()
-    .map(|r| r.map(|t| t.forget_spans()))
-    .try_collect::<Vec<_>>()
-    .expect("failed to decode tokens");
+    .map(|r| r.expect("failed to decode tokens").forget_spans())
+    .collect::<Vec<_>>();
 
   let expected_tokens: Vec<Token<&[u8]>> = vec![
     Token::Header {

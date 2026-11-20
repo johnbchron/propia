@@ -7,15 +7,17 @@ pub struct Span {
   /// The starting offset of the range.
   pub start: u32,
   /// The ending offset of the range.
-  pub end:   u32,
+  pub end: u32,
 }
 
 impl fmt::Debug for Span {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_tuple("Span")
-      .field_with(|fmt| {
-        write!(fmt, "[{start}..{end}]", start = self.start, end = self.end)
-      })
+      .field(&format!(
+        "[{start}..{end}]",
+        start = self.start,
+        end = self.end
+      ))
       .finish()
   }
 }
@@ -30,15 +32,21 @@ impl Span {
 
   /// Returns the length of the [`Span`].
   #[must_use]
-  pub fn len(self) -> u32 { self.end - self.start }
+  pub fn len(self) -> u32 {
+    self.end - self.start
+  }
 
   /// Indicates whether the span is zero-length.
   #[must_use]
-  pub fn is_empty(self) -> bool { self.start == self.end }
+  pub fn is_empty(self) -> bool {
+    self.start == self.end
+  }
 
   /// Returns the [`Span`] as a [`Range`].
   #[must_use]
-  pub fn range(self) -> Range<u32> { self.start..self.end }
+  pub fn range(self) -> Range<u32> {
+    self.start..self.end
+  }
 }
 
 /// A value with its originating span.
@@ -48,7 +56,7 @@ pub struct Spanned<T> {
   /// The value itself.
   pub value: T,
   /// The span indicating where it originated from.
-  pub span:  Span,
+  pub span: Span,
 }
 
 impl<T: fmt::Debug> fmt::Debug for Spanned<T> {
@@ -68,7 +76,7 @@ impl<T> Spanned<T> {
   {
     Spanned {
       value: f(self.value),
-      span:  self.span,
+      span: self.span,
     }
   }
 }
