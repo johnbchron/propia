@@ -261,7 +261,7 @@ impl Message {
 impl<'m> Edit<'m> {
   fn check(&self, msg: &Inner) {
     assert!(
-      std::ptr::eq(msg, &*self.msg.0),
+      std::ptr::eq(msg, &raw const *self.msg.0),
       "view belongs to a different message"
     );
   }
@@ -285,6 +285,10 @@ impl<'m> Edit<'m> {
   }
 
   /// Commits all the edits into a new full message.
+  ///
+  /// # Errors
+  ///
+  /// See the docs on [`Edit`] and [`EditError`] for errors.
   pub fn commit(self) -> Result<Message, EditError> {
     let msg = &*self.msg.0;
 

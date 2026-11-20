@@ -105,6 +105,7 @@ pub struct Assembler {
 
 impl Assembler {
   /// Builds a new assembler with the given [`Limits`].
+  #[must_use]
   pub fn new(limits: Limits) -> Self {
     Self {
       decoder: Decoder::new(),
@@ -117,6 +118,7 @@ impl Assembler {
   }
 
   /// Run the internal decoder on the next chunk of bytes.
+  #[must_use]
   pub fn push(mut self, chunk: &[u8]) -> Progress {
     // capture the chunk
     self.buf.extend_from_slice(chunk);
@@ -198,6 +200,8 @@ impl Assembler {
   }
 
   /// Finish the assembler and produce a message.
+  #[allow(clippy::missing_panics_doc)]
+  #[must_use]
   pub fn finish(mut self) -> Assembled {
     let end = self.run(true).expect("eof never needs more");
     self.assemble(end)
@@ -224,6 +228,7 @@ impl Default for Limits {
 
 impl Limits {
   /// Sets the limits to the maximum values.
+  #[must_use]
   pub fn unbounded() -> Self {
     Self {
       max_bytes:  u32::MAX,

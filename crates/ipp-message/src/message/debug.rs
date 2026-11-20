@@ -153,6 +153,7 @@ fn write_value(
   Ok(())
 }
 
+#[allow(clippy::many_single_char_names)]
 fn write_scalar(
   f: &mut fmt::Formatter<'_>,
   value: ValueRef<'_>,
@@ -233,7 +234,7 @@ fn value_tag_name(tag: ValueTag) -> Option<String> {
     ValueTag::MIME_MEDIA_TYPE => "mimeMediaType".into(),
     ValueTag::MEMBER_ATTR_NAME => "memberAttrName".into(),
     ValueTag::Standard(byte) => format!("unknown-value-type ({byte:#04x})"),
-    _ => return None,
+    ValueTag::Extension { .. } => return None,
   })
 }
 

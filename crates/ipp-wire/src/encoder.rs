@@ -136,16 +136,10 @@ fn encode_value<B: AsRef<[u8]>>(
   value: &B,
   mut out: &mut [u8],
 ) -> Result<(), EncodeError> {
-  match tag {
-    // this would be read back as a delimiter tag
-    ValueTag::Standard(0x00..=0x0F) => {
-      return Err(EncodeError::InvalidValueTag { tag });
-    }
-    // this should be a ValueTag::Extension, but we don't have the type
-    ValueTag::Standard(0x7F) => {
-      return Err(EncodeError::InvalidValueTag { tag });
-    }
-    _ => (),
+  // if it would be read back as a delimiter tag, or if it's an extension but
+  // missing its type
+  if let ValueTag::Standard(0x00..=0x0F | 0x7F) = tag {
+    return Err(EncodeError::InvalidValueTag { tag });
   }
 
   // calculate name length and value length, exiting early if needed

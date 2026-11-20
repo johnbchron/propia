@@ -19,9 +19,11 @@ pub struct Header {
 
 impl Message {
   /// Returns the slice of tokens this message was produced from.
+  #[must_use]
   pub fn tokens(&self) -> &[DecodedTokenIdx] { &self.0.tokens }
 
   /// Returns the header, unless the message was truncated before it finished.
+  #[must_use]
   pub fn header(&self) -> Option<Header> {
     match self.0.tokens.first()? {
       DecodedToken::Header {
@@ -58,10 +60,14 @@ impl Message {
   pub fn diagnostics(&self) -> &[Diagnostic] { &self.0.diagnostics }
 
   /// Iterates over the bytes of the message as contiguous slices.
+  #[allow(clippy::missing_panics_doc)]
   pub fn chunks(&self) -> impl Iterator<Item = &[u8]> {
     let msg = &*self.0;
     msg
-      .spans(0, msg.tokens.len() as u32)
+      .spans(
+        0,
+        u32::try_from(msg.tokens.len()).expect("tokens are len-checked"),
+      )
       .map(|s| msg.buffer.slice(s))
   }
 
@@ -166,6 +172,7 @@ pub struct GroupRef<'m> {
 
 impl<'m> GroupRef<'m> {
   /// Returns the range of tokens this group covers.
+  #[must_use]
   pub fn tokens(self) -> Range<u32> { self.row.tokens }
 
   /// Returns the group's tag. An implicit group, opened by an attribute with no
@@ -207,9 +214,11 @@ pub struct AttrRef<'m> {
 
 impl<'m> AttrRef<'m> {
   /// Returns the range of tokens this attribute covers.
+  #[must_use]
   pub fn tokens(self) -> Range<u32> { self.row.tokens }
 
   /// Returns the attribute's name.
+  #[must_use]
   pub fn name(self) -> &'m [u8] {
     let token = self.msg.value_token(self.row.tokens.start);
 
@@ -245,6 +254,7 @@ pub struct ValueRef<'m> {
 
 impl<'m> ValueRef<'m> {
   /// Returns the range of tokens this attribute covers.
+  #[must_use]
   pub fn tokens(self) -> Range<u32> { self.row.tokens }
 
   /// Returns the value's tag.

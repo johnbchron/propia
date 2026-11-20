@@ -11,6 +11,7 @@ impl<'m> Edit<'m> {
   pub fn set_header(&mut self, header: Header) { self.header = Some(header); }
 
   /// Add a new attribute group to the message.
+  #[allow(clippy::missing_panics_doc)]
   pub fn push_group(&mut self, group: Group) {
     let tokens = &self.msg.0.tokens;
 
@@ -22,10 +23,11 @@ impl<'m> Edit<'m> {
     );
 
     // place the group before the end tag if it's there
-    let pos = tokens.len() - usize::from(well_formed_end);
+    let pos = u32::try_from(tokens.len()).expect("tokens are len-checked")
+      - u32::from(well_formed_end);
 
     self.inserts.push(Insert {
-      pos:     pos as u32,
+      pos,
       payload: Payload::Group(group),
     });
   }
@@ -55,6 +57,10 @@ impl<'m> Edit<'m> {
   }
 
   /// Pushes a member attribute to the given collection.
+  ///
+  /// # Panics
+  ///
+  /// This method panics if the value is not a collection.
   pub fn push_member(&mut self, collection: ValueRef<'m>, attr: Attr) {
     self.check(collection.msg);
     // the value must be a collection, otherwise the message would be malformed.

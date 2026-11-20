@@ -169,6 +169,7 @@ impl Message {
   ///
   /// Builds an [`Assembler`] with `limits`, pushes the slice to it, and
   /// finalizes it.
+  #[must_use]
   pub fn from_slice(slice: &[u8], limits: Limits) -> Assembled {
     match Assembler::new(limits).push(slice) {
       crate::Progress::More(assembler) => assembler.finish(),
@@ -240,7 +241,9 @@ impl Builder {
       }
     }
 
-    self.close_everything(tokens.len() as u32);
+    self.close_everything(
+      u32::try_from(tokens.len()).expect("tokens are len-checked"),
+    );
     self
   }
 
@@ -290,7 +293,7 @@ impl Builder {
         return self.open_attr(i);
       }
       ValueTag::MEMBER_ATTR_NAME => {
-        self.diag(i, Kind::MemberNameOutsideCollection)
+        self.diag(i, Kind::MemberNameOutsideCollection);
       }
 
       // move on for anything else
@@ -329,7 +332,7 @@ impl Builder {
     }
   }
 
-  /// CLose the current collection, taking the end of the last attribute and the
+  /// Close the current collection, taking the end of the last attribute and the
   /// end collection token indices separately.
   fn close_collection(&mut self, attr_end: u32, value_end: u32) {
     self.close_attr(attr_end);
@@ -355,7 +358,9 @@ impl Builder {
   /// Opens a group.
   fn open_group(&mut self, i: u32) {
     // create a group
-    let row = GroupIdx(self.groups.len() as u32);
+    let row = GroupIdx(
+      u32::try_from(self.groups.len()).expect("tokens are len-checked"),
+    );
     self.groups.push(GroupRow {
       tokens: Range { start: i, end: i },
       attrs:  Box::default(),
@@ -389,7 +394,8 @@ impl Builder {
       self.open_group(i);
     }
 
-    let row = AttrIdx(self.attrs.len() as u32);
+    let row =
+      AttrIdx(u32::try_from(self.attrs.len()).expect("tokens are len-checked"));
     self.attrs.push(AttrRow {
       tokens: Range { start: i, end: i },
       values: Box::default(),
@@ -425,7 +431,9 @@ impl Builder {
 
   /// Pushes a value, marking the given token and the next.
   fn push_value(&mut self, i: u32) -> ValueIdx {
-    let row = ValueIdx(self.values.len() as u32);
+    let row = ValueIdx(
+      u32::try_from(self.values.len()).expect("tokens are len-checked"),
+    );
     self.values.push(ValueRow {
       tokens:  Range {
         start: i,

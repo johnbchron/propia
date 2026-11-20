@@ -11,6 +11,12 @@ pub struct Value {
 
 impl Value {
   /// Builds a scalar IPP Value from bytes.
+  ///
+  /// # Errors
+  ///
+  /// This function errors if the given value tag collides with the delimiter
+  /// tag range (`0x00..=0x0F`) or if the tag is `ValueTag::Standard(0x7F)`
+  /// (should be `ValueTag::Extension`).
   pub fn scalar(
     tag: ValueTag,
     bytes: impl Into<Bytes>,
@@ -32,6 +38,7 @@ impl Value {
   }
 
   /// Builds an integer value.
+  #[must_use]
   pub fn integer(v: i32) -> Self {
     Self::trusted(ValueTag::INTEGER, Bytes::copy_from_slice(&v.to_be_bytes()))
   }
@@ -129,6 +136,7 @@ pub struct Group {
 
 impl Group {
   /// Builds an IPP Attribute Group.
+  #[must_use]
   pub fn new(tag: DelimiterTag) -> Self {
     Self {
       tag,
