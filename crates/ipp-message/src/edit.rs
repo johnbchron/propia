@@ -48,7 +48,8 @@ pub enum EditError {
   Encode(EncodeError),
   /// An attribute name was present but empty.
   EmptyName,
-  /// A group delimiter tag exceeded `0x0F`.
+  /// A group delimiter tag exceeded `0x0F`, or equalled `0x03`, the
+  /// `end-of-attributes`.
   InvalidGroupTag(DelimiterTag),
   /// The first token of the new message was not the header. A message must
   /// either be completely empty or begin with a header.
