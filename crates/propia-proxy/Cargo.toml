@@ -1,0 +1,15 @@
+[package]
+name = "propia-proxy"
+version = "0.1.0"
+
+edition = "2024"
+
+[dependencies]
+ipp-message = { path = "../ipp-message" }
+ipp-message-util = { path = "../ipp-message-util" }
+
+axum = { version = "0.8", features = [ "macros" ] }
+clap = { version = "4.6.9", features = [ "derive" ] }
+futures = { version = "0.3" }
+reqwest = { version = "0.13", features = [ "stream" ] }
+tokio = { version = "1", features = [ "rt-multi-thread", "macros" ] }
