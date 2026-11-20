@@ -142,6 +142,8 @@ use crate::{Assembled, Assembler, Diagnostic, Kind, Limits, buffer::Buffer};
 /// [`Edit`](crate::edit::Edit) borrows from `Message` and is a builder for a
 /// round of edits that are executed by [`commit`](crate::edit::Edit::commit),
 /// which produces a new `Message`.
+///
+/// See the docs on [`Edit`](crate::edit::Edit) for more info.
 
 #[derive(Clone)]
 pub struct Message(pub(crate) Arc<Inner>);

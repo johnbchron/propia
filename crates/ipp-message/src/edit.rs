@@ -125,7 +125,117 @@ impl Splice {
 
 /// A builder for a round of edits to a [`Message`].
 ///
-/// todo: expand here
+/// `Edit` is used to edit [`Message`]s. It's returned by [`Message::edit`]
+/// and stages a set of edits, which are computed when [`commit`] is called.
+/// [`commit`] produces a new message, and the original is untouched.
+///
+/// ```
+/// use ipp_message::{
+///   Limits, Message,
+///   edit::{Attr, Group, Value},
+/// };
+/// use ipp_wire::DelimiterTag;
+///
+/// const BYTES: &[u8] =
+///   include_bytes!("../../../corpora/ipp-messages-initial/good/1.ipp");
+///
+/// let message = Message::from_slice(BYTES, Limits::default()).message;
+/// let op_attrs = message.groups().next().unwrap();
+/// let charset = op_attrs.get(b"attributes-charset").unwrap();
+/// let language = op_attrs.get(b"attributes-natural-language").unwrap();
+///
+/// let mut edit = message.edit();
+/// // edits refer to views of the original message...
+/// edit.rename(charset, "my-charset");
+/// edit.push_value(charset, Value::keyword("us-ascii"));
+/// edit.remove(language);
+/// edit.push_attr(op_attrs, Attr::new("copies", Value::integer(2)));
+/// // ...and new data is built up front from owned types
+/// edit.push_group(
+///   Group::new(DelimiterTag::JOB_ATTRIBUTES_TAG)
+///     .with(Attr::new("job-priority", Value::integer(50))),
+/// );
+/// let edited = edit.commit().unwrap();
+///
+/// // the original message is untouched
+/// assert!(
+///   message
+///     .groups()
+///     .next()
+///     .unwrap()
+///     .get(b"attributes-charset")
+///     .is_some()
+/// );
+///
+/// // the new message is edited
+/// let op_attrs = edited.groups().next().unwrap();
+/// assert_eq!(op_attrs.get(b"my-charset").unwrap().values().len(), 2);
+/// assert!(op_attrs.get(b"attributes-natural-language").is_none());
+/// assert!(op_attrs.get(b"copies").is_some());
+/// ```
+///
+/// ## Edits Refer to the Original Message
+///
+/// Every anchor you pass to an edit -- [`GroupRef`], [`AttrRef`], [`ValueRef`],
+/// and value indices -- refers to the original message the `Edit` was created
+/// from. Edits are staged, and they are all applied at once at [`commit`].
+/// Edits don't see the effects of other edits made against the same `Edit`,
+/// meaning for example even after `edit.remove_value(attr, 0)`, index `1` still
+/// means the second value in the attribute.
+///
+/// Similarly, data you add cannot be used as an anchor for other edits in the
+/// same round. Build new data fully with the owned [`Value`], [`Attr`], and
+/// [`Group`] types, or commit and start another round.
+///
+/// ## Combining Edits
+///
+/// Some rules for how edits combine:
+/// - Edits to the same attribute combine: one attribute can be renamed, have a
+///   value replaced, and have values pushed all in one round. Where edits
+///   conflict, the later call wins. [`remove`] drops all of an attribute's
+///   values; any later edit that gives it values ([`push_value`],
+///   [`set_values`], [`replace_value`]) brings it back with only those values.
+/// - An edit that leaves an attribute with no values removes it entirely
+///   (attributes that had no values to begin with are kept).
+/// - Removing a group with [`remove_group`] drops every other edit made inside
+///   it, including attributes pushed to it. Inserts *next to* removed items are
+///   kept: [`insert_before`] and [`insert_after`] still apply when their anchor
+///   is removed.
+/// - Multiple inserts at the same position are applied in call order with
+///   values before attributes before groups.
+///
+/// ## Committing
+///
+/// [`commit`] is the only step that can fail; see [`EditError`]. For example,
+/// pushing a group to an empty message without calling [`set_header`] fails
+/// with [`EditError::MissingHeader`][^1].
+///
+/// Committing doesn't copy or re-encode the original message's bytes: untouched
+/// tokens are reused as-is, and only new tokens are encoded and appended to the
+/// message's shared buffer. The message keeps track of which byte spans are
+/// relevant to the current version, and these can be read out with
+/// [`Message::chunks`], or copied into one chunk with [`Message::to_bytes`].
+///
+/// ## Panics
+///
+/// Methods taking a view will panic if the view they are passed refers to a
+/// different message than the message the `Edit` was started from. See also the
+/// individual methods.
+///
+/// [^1]: While an empty message will always be read back as missing a header, adding a group to it would mean that, after committing, the first 8 bytes of the group would be read back as the header.
+///
+/// [`ValueRef`]: crate::ValueRef
+/// [`commit`]: Edit::commit
+/// [`remove`]: Edit::remove
+/// [`push_value`]: Edit::push_value
+/// [`set_values`]: Edit::set_values
+/// [`remove_value`]: Edit::remove_value
+/// [`retain_values`]: Edit::retain_values
+/// [`replace_value`]: Edit::replace_value
+/// [`remove_group`]: Edit::remove_group
+/// [`insert_before`]: Edit::insert_before
+/// [`insert_after`]: Edit::insert_after
+/// [`set_header`]: Edit::set_header
 #[must_use = "edits are inert until committed"]
 pub struct Edit<'m> {
   msg:            &'m Message,
