@@ -1,0 +1,10 @@
+[package]
+name = "ipp-message-util"
+version = "0.1.0"
+
+edition = "2024"
+
+[dependencies]
+ipp-message = { path = "../ipp-message" }
+
+futures-core = { version = "0.3" }
