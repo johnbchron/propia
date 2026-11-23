@@ -67,12 +67,7 @@ impl Message {
   #[allow(clippy::missing_panics_doc)]
   pub fn chunks(&self) -> impl Iterator<Item = &[u8]> {
     let msg = &*self.0;
-    msg
-      .spans(
-        0,
-        u32::try_from(msg.tokens.len()).expect("tokens are len-checked"),
-      )
-      .map(|s| msg.buffer.slice(s))
+    msg.all_spans().map(|s| msg.buffer.slice(s))
   }
 
   /// Copies the message into one contiguous buffer.
@@ -95,6 +90,12 @@ impl Message {
         out.freeze()
       }
     }
+  }
+
+  /// Returns the total encoded length of the message.
+  #[must_use]
+  pub fn encoded_len(&self) -> usize {
+    self.0.all_spans().map(|s| s.len() as usize).sum()
   }
 }
 
@@ -135,11 +136,11 @@ impl Inner {
     }
   }
 
-  /// Iterates over the merged byte spans of a token range.
-  fn spans(&self, start: u32, end: u32) -> Spans<'_> {
+  /// Iterates over the merged byte spans of all the message tokens.
+  fn all_spans(&self) -> Spans<'_> {
     Spans {
       msg: self,
-      tokens: self.tokens[start as usize..end as usize].iter(),
+      tokens: self.tokens.iter(),
       pending: None,
     }
   }
