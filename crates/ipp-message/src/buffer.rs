@@ -42,16 +42,28 @@ impl Buffer {
     }
   }
 
-  /// Slices into a buffer. The span cannot cross segment boundaries. Panics on
-  /// out-of-bounds or a segment boundary.
-  pub(crate) fn slice(&self, span: Span) -> &[u8] {
-    // find the segment to slice
+  fn locate_span(&self, span: Span) -> (&Segment, usize, usize) {
     let index = self.segments.partition_point(|s| s.offset <= span.start) - 1;
     let segment = &self.segments[index];
 
     let start = (span.start - segment.offset) as usize;
     let end = (span.end - segment.offset) as usize;
+
+    (segment, start, end)
+  }
+
+  /// Slices into a buffer. The span cannot cross segment boundaries. Panics on
+  /// out-of-bounds or a segment boundary.
+  pub(crate) fn slice(&self, span: Span) -> &[u8] {
+    let (segment, start, end) = self.locate_span(span);
     &segment.bytes[start..end]
+  }
+
+  /// Slices into a buffer, as Bytes. The span cannot cross segment boundaries.
+  /// Panics on out-of-bounds or a segment boundary.
+  pub(crate) fn slice_bytes(&self, span: Span) -> Bytes {
+    let (segment, start, end) = self.locate_span(span);
+    segment.bytes.slice(start..end)
   }
 
   /// Returns whether the start of a segment falls on a given offset.

@@ -78,9 +78,23 @@ impl Message {
   /// Copies the message into one contiguous buffer.
   #[must_use]
   pub fn to_bytes(&self) -> Bytes {
-    let mut out = BytesMut::new();
-    self.chunks().for_each(|chunk| out.extend_from_slice(chunk));
-    out.freeze()
+    let msg = &*self.0;
+    let mut spans = msg.all_spans();
+
+    match (spans.next(), spans.next()) {
+      // empty buffer
+      (None, _) => Bytes::new(),
+      // only one segment
+      (Some(span), None) => {
+        // only one span means it doesn't cross segment borders
+        msg.buffer.slice_bytes(span)
+      }
+      _ => {
+        let mut out = BytesMut::with_capacity(self.encoded_len());
+        self.chunks().for_each(|c| out.extend_from_slice(c));
+        out.freeze()
+      }
+    }
   }
 }
 
