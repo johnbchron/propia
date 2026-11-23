@@ -81,6 +81,7 @@ dependencies = [
 name = "ipp-message-util"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "futures-core",
  "ipp-message",
 ]
