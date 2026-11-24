@@ -191,8 +191,14 @@ impl Assembler {
   /// Build the message with the current buffer and given end state.
   fn assemble(mut self, end: EndState) -> Assembled {
     // separate consumed bytes from unconsumed bytes
-    let bytes = self.buf.split_to(self.pos).freeze();
-    let rest = self.buf.freeze();
+    let rest = self.buf.split_off(self.pos).freeze();
+    let bytes = if rest.is_empty() {
+      self.buf.freeze()
+    } else {
+      // this is done to make sure rest's allocation is dropped if rest is dropped
+      // worth a copy
+      Bytes::copy_from_slice(&self.buf)
+    };
 
     // build and return the message
     let message = Message::build(Buffer::new(bytes), self.tokens);
