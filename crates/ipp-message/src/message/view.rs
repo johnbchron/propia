@@ -1,7 +1,9 @@
 use std::{iter::FusedIterator, range::Range, slice};
 
 use bytes::{Bytes, BytesMut};
-use ipp_wire::{DecodedToken, DecodedTokenIdx, DelimiterTag, Span, ValueTag};
+use ipp_wire::{
+  DecodedToken, DecodedTokenIdx, DelimiterTag, Span, Spanned, ValueTag,
+};
 
 use super::{AttrIdx, AttrRow, GroupRow, Inner, Message, ValueIdx, ValueRow};
 use crate::Diagnostic;
@@ -40,6 +42,23 @@ impl Message {
       }),
       _ => None,
     }
+  }
+
+  /// Determines whether the last token is an `end-of-attributes` tag.
+  ///
+  /// This is useful for preventing cases where job data attached after the fact
+  /// would be incorrectly decoded as attribute data.
+  #[must_use]
+  pub fn is_terminated(&self) -> bool {
+    matches!(
+      self.tokens().last(),
+      Some(DecodedToken::Delimiter {
+        tag: Spanned {
+          value: DelimiterTag::END_OF_ATTRIBUTES_TAG,
+          ..
+        }
+      })
+    )
   }
 
   /// Iterates through the attribute groups, in message order.
