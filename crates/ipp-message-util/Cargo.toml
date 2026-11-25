@@ -9,3 +9,6 @@ ipp-message = { path = "../ipp-message" }
 
 bytes = { workspace = true }
 futures-core = { version = "0.3" }
+
+[dev-dependencies]
+futures = "0.3.34"

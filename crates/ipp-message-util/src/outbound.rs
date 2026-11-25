@@ -1,5 +1,9 @@
-//! Contains types and functions useful for conveniently assembling outbound
-//! streams from message and document data.
+//! Writing messages to outbound streams.
+//!
+//! An [`Outbound`] can be built from scratch with [`Outbound::new`], or come
+//! from a message that was read, with
+//! [`Inbound::into_verbatim`](crate::inbound::Inbound::into_verbatim) or
+//! [`Split::into_outbound`](crate::inbound::Split::into_outbound).
 
 use std::{
   error::Error,
@@ -14,9 +18,11 @@ use ipp_message::Message;
 
 use crate::chain::Chain;
 
-/// An outbound message stream.
+/// A byte stream of a [`Message`] followed by its job data, ready to be sent
+/// over the wire.
 ///
-/// [`Outbound`] is a byte stream ready to be sent over the wire, containing a message and job data.
+/// The message is yielded first, and then the job data as it arrives. After the
+/// stream ends or yields an error, it only yields `None`.
 pub struct Outbound<S>(pub(crate) Chain<S>);
 
 impl<S> fmt::Debug for Outbound<S> {
@@ -26,7 +32,16 @@ impl<S> fmt::Debug for Outbound<S> {
 }
 
 impl<S> Outbound<S> {
-  /// Constructs a new [`Outbound`] stream from a [`Message`] and a document stream.
+  /// Joins a [`Message`] and a stream of job data.
+  ///
+  /// `document_len` is the length of the job data in bytes, if known. It should
+  /// not include the message.
+  ///
+  /// For a message without job data, pass an empty stream and `Some(0)`.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`Unterminated`] if the message is unterminated.
   pub fn new(
     message: &Message,
     document: S,
@@ -68,11 +83,12 @@ where
   }
 }
 
-/// Indicates that a message was unterminated, meaning the last token was not an
-/// `end-of-attributes`.
+/// Indicates that a message was unterminated, meaning its last token was not an
+/// `end-of-attributes` tag.
 ///
-/// If an unterminated message was emitted from a stream, data following the
-/// message would be misinterpreted as being part of the message.
+/// If job data were attached to an unterminated message, the job data would be
+/// misinterpreted as being part of the message. See also
+/// [`Message::is_terminated`].
 #[derive(Debug)]
 pub struct Unterminated;
 
