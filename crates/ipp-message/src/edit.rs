@@ -5,7 +5,7 @@
 mod mutators;
 mod owned;
 
-use std::{cmp::Reverse, collections::BTreeMap};
+use std::{cmp::Reverse, collections::BTreeMap, error::Error, fmt};
 
 use bytes::Bytes;
 use ipp_wire::{
@@ -29,6 +29,18 @@ fn tok(tag: ValueTag, name: Bytes, value: Bytes) -> Token<Bytes> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidTag(pub ValueTag);
 
+impl fmt::Display for InvalidTag {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(
+      f,
+      "invalid value tag used to construct a value: {:?}",
+      self.0
+    )
+  }
+}
+
+impl Error for InvalidTag {}
+
 /// An error occurring when trying to commit a round of edits to a [`Message`].
 #[derive(Debug, PartialEq, Eq)]
 pub enum EditError {
@@ -41,6 +53,34 @@ pub enum EditError {
   /// The first token of the new message was not the header. A message must
   /// either be completely empty or begin with a header.
   MissingHeader,
+}
+
+impl fmt::Display for EditError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      EditError::Encode(_) => {
+        write!(f, "failed to encode edited bytes")
+      }
+      EditError::EmptyName => write!(f, "an edited attribute name is empty"),
+      EditError::InvalidGroupTag(tag) => {
+        write!(f, "a group delimiter tag exceeded 0x0F: {:x}", tag.0)
+      }
+      EditError::MissingHeader => {
+        write!(f, "the first token of the new message was not a header")
+      }
+    }
+  }
+}
+
+impl Error for EditError {
+  fn source(&self) -> Option<&(dyn Error + 'static)> {
+    match self {
+      EditError::Encode(encode_error) => Some(encode_error),
+      EditError::EmptyName
+      | EditError::InvalidGroupTag(_)
+      | EditError::MissingHeader => None,
+    }
+  }
 }
 
 impl From<EncodeError> for EditError {
