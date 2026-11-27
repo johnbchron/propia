@@ -800,6 +800,7 @@ name = "ipp-wire"
 version = "0.1.0"
 dependencies = [
  "arbitrary",
+ "tracing",
 ]
 
 [[package]]

@@ -72,6 +72,7 @@ pub fn encode_token<B: AsRef<[u8]>>(
 ) -> Result<usize, EncodeError> {
   let (needed, available) = (encoded_len(token), out.len());
   if needed > available {
+    tracing::debug!(needed, available, "buffer is too small to encode token");
     return Err(EncodeError::BufferTooSmall { needed, available });
   }
 
@@ -85,12 +86,16 @@ pub fn encode_token<B: AsRef<[u8]>>(
       encode_header(*version, *operation_or_status, *request_id, out);
     }
     Token::Delimiter { tag } => {
-      encode_delimiter(*tag, out)?;
+      encode_delimiter(*tag, out).inspect_err(|e| {
+        tracing::debug!(error = %e, "failed to encode delimiter token");
+      })?;
     }
     Token::Value {
       tag, name, value, ..
     } => {
-      encode_value(*tag, name, value, out)?;
+      encode_value(*tag, name, value, out).inspect_err(|e| {
+        tracing::debug!(error = %e, "failed to encode value token");
+      })?;
     }
     Token::Data { data } => {
       put(&mut out, data.as_ref());

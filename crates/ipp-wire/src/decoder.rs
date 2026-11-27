@@ -1,5 +1,7 @@
 mod decode;
 
+use tracing::trace;
+
 use self::decode::{decode_attribute_or_delimiter, decode_header};
 use crate::{
   DecodeError, DecodeErrorKind, DecodedTokenRef, DelimiterTag, cursor::Cursor,
@@ -116,13 +118,20 @@ impl Decoder {
     }
 
     let mut cur = Cursor::new(buf, self.offset).ok_or_else(|| {
-      self.state = State::Failed;
-      DecodeError {
+      let error = DecodeError {
         offset: self.offset,
         message: "total size of buffers passed exceeded 4 GiB before message \
                   attribute data concluded.",
         kind: DecodeErrorKind::OffsetOverflow,
-      }
+      };
+      tracing::debug!(
+        offset = error.offset,
+        kind = ?error.kind,
+        error = %error,
+        "decoding failed"
+      );
+      self.state = State::Failed;
+      error
     })?;
 
     let attempt = match self.state {
@@ -135,10 +144,20 @@ impl Decoder {
       Ok(token) => {
         // state transitions
         match token {
-          DecodedTokenRef::Header { .. } => self.state = State::Attributes,
+          DecodedTokenRef::Header { .. } => {
+            trace!(
+              offset = cur.offset(),
+              "transitioning state from State::Header to State::Attributes"
+            );
+            self.state = State::Attributes
+          }
           DecodedTokenRef::Delimiter { tag }
             if tag.value == DelimiterTag::END_OF_ATTRIBUTES_TAG =>
           {
+            trace!(
+              offset = cur.offset(),
+              "transitioning state from State::Attributes to State::Body"
+            );
             self.state = State::Body;
           }
           _ => {}
@@ -148,9 +167,20 @@ impl Decoder {
         Ok(Step::Token { token, consumed })
       }
       Err(Stall::Incomplete { min_len, .. }) if !eof => {
+        trace!(
+          min_len,
+          offset = self.offset(),
+          "need more bytes in decoder"
+        );
         Ok(Step::NeedMore { min_len })
       }
       Err(Stall::Incomplete { at_eof: e, .. } | Stall::Invalid(e)) => {
+        tracing::debug!(
+          offset = e.offset,
+          kind = ?e.kind,
+          error = %e,
+          "decoding failed"
+        );
         self.state = State::Failed;
         Err(e)
       }
