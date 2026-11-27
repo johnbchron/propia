@@ -20,6 +20,9 @@ const IPP_CONTENT_TYPE: &str = "application/ipp";
 
 #[derive(Parser, Clone, Debug)]
 struct Args {
+  /// The port that the proxy listens on.
+  #[arg(short = 'p', long, default_value = "6311")]
+  listen_port: u16,
   /// The upstream URL to forward requests to.
   #[arg(short, long)]
   upstream: String,
@@ -113,17 +116,18 @@ async fn proxy_handler(
 
 #[tokio::main]
 async fn main() {
-  let args = Args::parse();
-
-  let mut upstream_url = args.upstream;
+  let Args {
+    listen_port,
+    mut upstream,
+  } = Args::parse();
 
   // replace scheme; covers both ipp and ipps
-  if upstream_url.starts_with("ipp") {
-    upstream_url.replace_first("ipp", "http");
+  if upstream.starts_with("ipp") {
+    upstream.replace_first("ipp", "http");
   }
 
   let upstream_url: Url =
-    upstream_url.parse().expect("failed to parse upstream URL");
+    upstream.parse().expect("failed to parse upstream URL");
   if upstream_url.path() != "/" {
     panic!(
       "upstream url should not have a path set: {}",
@@ -131,7 +135,7 @@ async fn main() {
     );
   }
 
-  println!("proxying traffic to: {upstream_url}");
+  println!("proxying traffic on port {listen_port} to: {upstream_url}");
 
   let app_state = AppState {
     client: Client::new(),
@@ -142,9 +146,10 @@ async fn main() {
     .route("/{*wildcard}", post(proxy_handler))
     .with_state(app_state);
 
-  let listener = tokio::net::TcpListener::bind("0.0.0.0:6311")
-    .await
-    .expect("failed to bind listener");
+  let listener =
+    tokio::net::TcpListener::bind(format!("0.0.0.0:{listen_port}"))
+      .await
+      .expect("failed to bind listener");
 
   axum::serve(listener, router)
     .await
