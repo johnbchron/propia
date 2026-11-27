@@ -68,16 +68,23 @@ async fn proxy_handler(
   println!("{:?}", inbound.message());
   println!("----- end of inbound message ------");
 
-  // split the message and body if the message is propery terminated
-  let Ok(mut split) = inbound.split() else {
-    return Err((StatusCode::BAD_REQUEST, "unterminated IPP message"));
+  // split and edit if the message is propery terminated, otherwise just send
+  let outbound = match inbound.split() {
+    Ok(mut split) => {
+      // edit the message with the rewriter
+      split
+        .edit(naive_rewriter)
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "editing failed"))?;
+
+      // prep for outbound stream
+      split.into_outbound()
+    }
+    Err(inbound) => {
+      // pass along without editing
+      println!("failed to split message from document: message unterminated");
+      inbound.into_verbatim()
+    }
   };
-
-  split
-    .edit(naive_rewriter)
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "editing failed"))?;
-
-  let outbound = split.into_outbound();
 
   // set the upstream with the current path
   let mut upstream = state.upstream_url.clone();
