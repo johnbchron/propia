@@ -1,3 +1,5 @@
+#![feature(string_replace_in_place)]
+
 use clap::Parser;
 use ipp_message_util::inbound::Inbound;
 use std::io::{self};
@@ -6,13 +8,13 @@ use axum::{
   Router,
   body::Body,
   debug_handler,
-  extract::{Request, State},
+  extract::{Path, Request, State},
   response::IntoResponse,
   routing::post,
 };
 use futures::TryStreamExt;
 use ipp_message::{Limits, Message, edit::Edit};
-use reqwest::{Client, StatusCode, header::CONTENT_TYPE};
+use reqwest::{Client, StatusCode, Url, header::CONTENT_TYPE};
 
 const IPP_CONTENT_TYPE: &str = "application/ipp";
 
@@ -23,11 +25,18 @@ struct Args {
   upstream: String,
 }
 
+#[derive(Clone, Debug)]
+struct AppState {
+  client: Client,
+  upstream_url: Url,
+}
+
 fn naive_rewriter(_input: &Message, _edit: &mut Edit) {}
 
 #[debug_handler]
 async fn proxy_handler(
-  State(state): State<Args>,
+  State(state): State<AppState>,
+  Path(path): Path<String>,
   req: Request,
 ) -> Result<impl IntoResponse, impl IntoResponse> {
   // make sure content-type is IPP
@@ -67,9 +76,13 @@ async fn proxy_handler(
 
   let outbound = split.into_outbound();
 
-  let client = Client::new();
-  let resp = client
-    .post(&state.upstream)
+  // set the upstream with the current path
+  let mut upstream = state.upstream_url.clone();
+  upstream.set_path(&path);
+
+  let resp = state
+    .client
+    .post(upstream)
     .header(CONTENT_TYPE, IPP_CONTENT_TYPE)
     .body(reqwest::Body::wrap_stream(Box::pin(
       outbound.map_err(Box::new),
@@ -102,9 +115,32 @@ async fn proxy_handler(
 async fn main() {
   let args = Args::parse();
 
+  let mut upstream_url = args.upstream;
+
+  // replace scheme; covers both ipp and ipps
+  if upstream_url.starts_with("ipp") {
+    upstream_url.replace_first("ipp", "http");
+  }
+
+  let upstream_url: Url =
+    upstream_url.parse().expect("failed to parse upstream URL");
+  if upstream_url.path() != "/" {
+    panic!(
+      "upstream url should not have a path set: {}",
+      upstream_url.path()
+    );
+  }
+
+  println!("proxying traffic to: {upstream_url}");
+
+  let app_state = AppState {
+    client: Client::new(),
+    upstream_url,
+  };
+
   let router = Router::new()
-    .route("/proxy", post(proxy_handler))
-    .with_state(args);
+    .route("/{*wildcard}", post(proxy_handler))
+    .with_state(app_state);
 
   let listener = tokio::net::TcpListener::bind("0.0.0.0:6311")
     .await
