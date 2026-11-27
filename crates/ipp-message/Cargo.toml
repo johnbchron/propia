@@ -8,3 +8,4 @@ edition = "2024"
 ipp-wire = { path = "../ipp-wire" }
 
 bytes = { workspace = true }
+tracing = { workspace = true }

@@ -91,7 +91,11 @@ use crate::{Message, buffer::Buffer};
 /// );
 /// ```
 pub struct Assembler {
+  /// The token-decoding state machine.
   decoder: Decoder,
+  /// A single tracing span that covers the whole assembly.
+  t_span: tracing::Span,
+  /// The internal shared buffer.
   buf: BytesMut,
   /// Position of the decoder (tokens already decoded).
   pos: usize,
@@ -109,6 +113,7 @@ impl Assembler {
   pub fn new(limits: Limits) -> Self {
     Self {
       decoder: Decoder::new(),
+      t_span: tracing::debug_span!("Assembler",),
       buf: BytesMut::new(),
       pos: 0,
       wanted: 0,
@@ -120,11 +125,18 @@ impl Assembler {
   /// Run the internal decoder on the next chunk of bytes.
   #[must_use]
   pub fn push(mut self, chunk: &[u8]) -> Progress {
+    let _g = self.t_span.clone().entered();
+
     // capture the chunk
     self.buf.extend_from_slice(chunk);
 
     // don't try the decoder if the buffer doesn't have enough
     if self.buf.len() < self.wanted {
+      tracing::trace!(
+        buffered = self.buf.len(),
+        wanted = self.wanted,
+        "too few bytes pushed, skipping decoding"
+      );
       return Progress::More(self);
     }
 
@@ -142,6 +154,11 @@ impl Assembler {
       let stop = self.buf.len().min(self.limits.max_bytes as usize);
 
       if self.tokens.len() >= self.limits.max_tokens as usize {
+        tracing::debug!(
+          limit = self.limits.max_tokens,
+          observed = self.tokens.len(),
+          "token limit hit"
+        );
         return Some(EndState::LimitExceeded);
       }
 
@@ -171,6 +188,11 @@ impl Assembler {
 
           // abort early if a token can't be decoded under the limits
           if self.wanted > self.limits.max_bytes as usize {
+            tracing::debug!(
+              limit = self.limits.max_bytes,
+              observed = self.wanted,
+              "byte limit hit"
+            );
             return Some(EndState::LimitExceeded);
           }
 
@@ -202,6 +224,15 @@ impl Assembler {
 
     // build and return the message
     let message = Message::build(Buffer::new(bytes), self.tokens);
+
+    tracing::debug!(
+      tokens = message.tokens().len(),
+      consumed = self.pos,
+      rest_len = rest.len(),
+      ?end,
+      "message finished"
+    );
+
     Assembled { message, rest, end }
   }
 
@@ -209,6 +240,7 @@ impl Assembler {
   #[allow(clippy::missing_panics_doc)]
   #[must_use]
   pub fn finish(mut self) -> Assembled {
+    let _g = self.t_span.clone().entered();
     let end = self.run(true).expect("eof never needs more");
     self.assemble(end)
   }

@@ -158,6 +158,13 @@ impl Message {
   /// are problems, a [`Diagnostic`] will be recorded.
   pub(crate) fn build(buffer: Buffer, tokens: Vec<DecodedTokenIdx>) -> Self {
     let builder = Builder::default().run(&tokens);
+    tracing::debug!(
+      group_count = builder.groups.len(),
+      attr_count = builder.attrs.len(),
+      value_count = builder.values.len(),
+      diagnostic_count = builder.diagnostics.len(),
+      "built message"
+    );
 
     Self(Arc::new(Inner {
       buffer,

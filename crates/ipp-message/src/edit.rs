@@ -334,6 +334,15 @@ impl<'m> Edit<'m> {
   /// # Errors
   ///
   /// See the docs on [`Edit`] and [`EditError`] for errors.
+  #[tracing::instrument(
+    skip_all,
+    err(level = "debug"),
+    fields(
+      group_removals = self.group_removals.len(),
+      inserts = self.inserts.len(),
+      attr_edits = self.attr_edits.len()
+    )
+  )]
   pub fn commit(self) -> Result<Message, EditError> {
     let msg = &*self.msg.0;
 
@@ -405,6 +414,12 @@ impl<'m> Edit<'m> {
         && removed
           .is_some_and(|(end, rank)| splice.start == end && splice.rank < rank);
       if within || owned {
+        tracing::trace!(
+          start = splice.start,
+          end = splice.end,
+          rank = ?splice.rank,
+          "splice skipped"
+        );
         continue;
       }
 

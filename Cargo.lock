@@ -783,6 +783,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "ipp-wire",
+ "tracing",
 ]
 
 [[package]]
