@@ -112,7 +112,7 @@ struct AttrEdit<'m> {
 }
 
 /// The impact of an edit, ranked smallest to biggest.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Rank {
   Value,
   Attr,
