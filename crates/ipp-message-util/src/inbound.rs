@@ -98,6 +98,7 @@ impl<S> Inbound<S> {
   /// Returns [`Interrupted`] if the stream yields an error before any of the
   /// above happens. Malformed data, exceeded limits, and streams that end early
   /// are not errors here; see [`end`](Inbound::end) for those.
+  #[tracing::instrument(skip_all)]
   pub async fn read(
     mut stream: S,
     limits: Limits,
