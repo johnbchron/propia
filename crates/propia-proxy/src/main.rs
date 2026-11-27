@@ -92,7 +92,7 @@ async fn proxy_handler(
     )))
     .send()
     .await
-    .unwrap();
+    .map_err(|_| (StatusCode::BAD_GATEWAY, "failed to send to upstream"))?;
   println!("sent!");
 
   println!("---- receiving reply message -------");
