@@ -83,7 +83,7 @@ async fn proxy_handler(
   let mut upstream = state.upstream_url.clone();
   upstream.set_path(&path);
 
-  let resp = state
+  let reply = state
     .client
     .post(upstream)
     .header(CONTENT_TYPE, IPP_CONTENT_TYPE)
@@ -96,9 +96,11 @@ async fn proxy_handler(
   println!("sent!");
 
   println!("---- receiving reply message -------");
-  let resp_body = resp.bytes_stream().map_err(io::Error::other);
+  let reply_status = reply.status();
+  let reply_headers = reply.headers().clone();
+  let reply_body = reply.bytes_stream().map_err(io::Error::other);
 
-  let reply_inbound = Inbound::read(resp_body, Limits::default()).await;
+  let reply_inbound = Inbound::read(reply_body, Limits::default()).await;
 
   let Ok(reply_inbound) = reply_inbound else {
     return Err((
@@ -111,7 +113,11 @@ async fn proxy_handler(
   println!("{:?}", reply_inbound.message());
   println!("----- end of outbound message -----");
 
-  Ok(Body::from_stream(reply_inbound.into_verbatim()))
+  Ok((
+    reply_status,
+    reply_headers,
+    Body::from_stream(reply_inbound.into_verbatim()),
+  ))
 }
 
 #[tokio::main]
