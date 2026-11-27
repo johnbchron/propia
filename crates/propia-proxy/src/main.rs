@@ -42,7 +42,7 @@ fn naive_rewriter(_input: &Message, _edit: &mut Edit) {}
 #[debug_handler]
 async fn proxy_handler(
   State(state): State<AppState>,
-  Path(path): Path<String>,
+  path: Option<Path<String>>,
   req: Request,
 ) -> Result<impl IntoResponse, impl IntoResponse> {
   // make sure content-type is IPP
@@ -100,7 +100,7 @@ async fn proxy_handler(
 
   // set the upstream with the current path
   let mut upstream = state.upstream_url.clone();
-  upstream.set_path(&path);
+  upstream.set_path(path.as_ref().map(|p| &*p.0).unwrap_or("/"));
 
   let reply = state
     .client
@@ -168,6 +168,7 @@ async fn main() {
   };
 
   let router = Router::new()
+    .route("/", post(proxy_handler))
     .route("/{*wildcard}", post(proxy_handler))
     .with_state(app_state);
 
