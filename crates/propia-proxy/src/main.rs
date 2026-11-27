@@ -3,6 +3,8 @@
 use clap::Parser;
 use ipp_message_util::inbound::Inbound;
 use std::io::{self};
+use tracing::Level;
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use axum::{
   Router,
@@ -50,12 +52,16 @@ async fn proxy_handler(
     Some(content_type)
       if matches!(content_type.to_str(), Ok(IPP_CONTENT_TYPE)) => {}
     Some(_) => {
+      tracing::error!("unsupported content type");
       return Err((
         StatusCode::UNSUPPORTED_MEDIA_TYPE,
         "Unsupported content type",
       ));
     }
-    None => return Err((StatusCode::BAD_REQUEST, "No content type specified")),
+    None => {
+      tracing::error!("no content type specified");
+      return Err((StatusCode::BAD_REQUEST, "No content type specified"));
+    }
   }
 
   let inbound_content_length = req
@@ -70,30 +76,30 @@ async fn proxy_handler(
 
   // if the inbound stream is interrupted, fail the request
   let Ok(inbound) = inbound else {
+    tracing::error!("inbound request terminated early");
     return Err((StatusCode::BAD_REQUEST, "Request terminated early"));
   };
 
   // assign content length
   let inbound = inbound.with_len(inbound_content_length);
 
-  println!("----- inbound message -------------");
-  println!("{:?}", inbound.message());
-  println!("----- end of inbound message ------");
+  tracing::info!("got inbound message: {:?}", inbound.message());
 
   // split and edit if the message is propery terminated, otherwise just send
   let outbound = match inbound.split() {
     Ok(mut split) => {
       // edit the message with the rewriter
-      split
-        .edit(naive_rewriter)
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "editing failed"))?;
+      split.edit(naive_rewriter).map_err(|_| {
+        tracing::error!("editing failed");
+        (StatusCode::INTERNAL_SERVER_ERROR, "editing failed")
+      })?;
 
       // prep for outbound stream
       split.into_outbound()
     }
     Err(inbound) => {
       // pass along without editing
-      println!("failed to split message from document: message unterminated");
+      tracing::error!("failed to split message from document");
       inbound.into_verbatim()
     }
   };
@@ -111,10 +117,11 @@ async fn proxy_handler(
     )))
     .send()
     .await
-    .map_err(|_| (StatusCode::BAD_GATEWAY, "failed to send to upstream"))?;
-  println!("sent!");
+    .map_err(|error| {
+      tracing::error!(%error, "failed to send to upstream");
+      (StatusCode::BAD_GATEWAY, "failed to send to upstream")
+    })?;
 
-  println!("---- receiving reply message -------");
   let reply_status = reply.status();
   let reply_headers = reply.headers().clone();
   let reply_body = reply.bytes_stream().map_err(io::Error::other);
@@ -122,15 +129,14 @@ async fn proxy_handler(
   let reply_inbound = Inbound::read(reply_body, Limits::default()).await;
 
   let Ok(reply_inbound) = reply_inbound else {
+    tracing::error!("reply from upstream terminated early");
     return Err((
       StatusCode::BAD_GATEWAY,
       "reply from upstream was interrupted",
     ));
   };
 
-  println!("----- outbound message ------------");
-  println!("{:?}", reply_inbound.message());
-  println!("----- end of outbound message -----");
+  tracing::info!("got reply message: {:?}", reply_inbound.message());
 
   Ok((
     reply_status,
@@ -141,6 +147,15 @@ async fn proxy_handler(
 
 #[tokio::main]
 async fn main() {
+  tracing_subscriber::registry()
+    .with(fmt::layer())
+    .with(
+      EnvFilter::builder()
+        .with_default_directive(Level::INFO.into())
+        .from_env_lossy(),
+    )
+    .init();
+
   let Args {
     listen_port,
     mut upstream,
@@ -160,7 +175,8 @@ async fn main() {
     );
   }
 
-  println!("proxying traffic on port {listen_port} to: {upstream_url}");
+  let listen_addr = format!("0.0.0.0:{listen_port}");
+  tracing::info!("proxying traffic at {listen_addr} to: {upstream_url}");
 
   let app_state = AppState {
     client: Client::new(),
@@ -172,10 +188,9 @@ async fn main() {
     .route("/{*wildcard}", post(proxy_handler))
     .with_state(app_state);
 
-  let listener =
-    tokio::net::TcpListener::bind(format!("0.0.0.0:{listen_port}"))
-      .await
-      .expect("failed to bind listener");
+  let listener = tokio::net::TcpListener::bind(listen_addr)
+    .await
+    .expect("failed to bind listener");
 
   axum::serve(listener, router)
     .await

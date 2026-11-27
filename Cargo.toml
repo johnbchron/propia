@@ -5,3 +5,4 @@ resolver = "3"
 [workspace.dependencies]
 arbitrary = { version = "1.5" }
 bytes = { version = "1.12" }
+tracing = { version = "0.1" }
