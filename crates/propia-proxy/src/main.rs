@@ -14,7 +14,10 @@ use axum::{
 };
 use futures::TryStreamExt;
 use ipp_message::{Limits, Message, edit::Edit};
-use reqwest::{Client, StatusCode, Url, header::CONTENT_TYPE};
+use reqwest::{
+  Client, StatusCode, Url,
+  header::{CONTENT_LENGTH, CONTENT_TYPE},
+};
 
 const IPP_CONTENT_TYPE: &str = "application/ipp";
 
@@ -55,6 +58,12 @@ async fn proxy_handler(
     None => return Err((StatusCode::BAD_REQUEST, "No content type specified")),
   }
 
+  let inbound_content_length = req
+    .headers()
+    .get(CONTENT_LENGTH)
+    .and_then(|v| v.to_str().ok())
+    .and_then(|s| s.parse::<u64>().ok());
+
   // form the inbound stream from the request body
   let inbound =
     Inbound::read(req.into_body().into_data_stream(), Limits::default()).await;
@@ -63,6 +72,9 @@ async fn proxy_handler(
   let Ok(inbound) = inbound else {
     return Err((StatusCode::BAD_REQUEST, "Request terminated early"));
   };
+
+  // assign content length
+  let inbound = inbound.with_len(inbound_content_length);
 
   println!("----- inbound message -------------");
   println!("{:?}", inbound.message());
